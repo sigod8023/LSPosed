@@ -32,7 +32,7 @@ namespace lspd {
     enum Variant {
         NONE = 0,
         YAHFA = 1,
-        SANDHOOK = 2,
+        // SANDHOOK = 2,
     };
 
     class Context {

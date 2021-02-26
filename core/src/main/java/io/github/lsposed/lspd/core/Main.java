@@ -76,9 +76,6 @@ public class Main {
                 case Impl.YAHFA:
                     Class.forName("io.github.lsposed.lspd.yahfa.core.YahfaImpl");
                     break;
-                case Impl.SANDHOOK:
-                    Class.forName("io.github.lsposed.lspd.sandhook.core.SandHookImpl");
-                    break;
                 default:
                     Utils.logE("Unsupported variant " + variant);
 

@@ -23,7 +23,6 @@
 #include "JNIHelper.h"
 #include "jni/art_class_linker.h"
 #include "jni/yahfa.h"
-#include "jni/sandhook.h"
 #include "jni/resources_hook.h"
 #include <dl_util.h>
 #include <art/runtime/jni_env_ext.h>
@@ -127,7 +126,6 @@ namespace lspd {
         RegisterYahfa(env);
         RegisterPendingHooks(env);
         RegisterNativeAPI(env);
-        RegisterSandHook(env);
     }
 
     jclass

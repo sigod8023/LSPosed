@@ -35,6 +35,8 @@ public interface Impl {
 
     int NONE = 0;
     int YAHFA = 1;
+
+    @Deprecated
     int SANDHOOK = 2;
 
     @NonNull
@@ -51,7 +53,7 @@ public interface Impl {
     boolean isInitialized();
 
     @Retention(SOURCE)
-    @IntDef({NONE, YAHFA, SANDHOOK})
+    @IntDef({NONE, YAHFA})
     @interface Variant {
     }
 }

@@ -177,8 +177,6 @@ public class ConfigManager {
         switch (variant) {
             case 1:
                 return "YAHFA";
-            case 2:
-                return "SandHook";
             default:
                 return "Unknown";
         }

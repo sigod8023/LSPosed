@@ -241,8 +241,6 @@ fi
 
 if [ $VARIANT == 17 ]; then  # YAHFA
   echo "1" > /data/adb/lspd/config/variant
-elif [ $VARIANT == 18 ]; then  # SandHook
-  echo "2" > /data/adb/lspd/config/variant
 else
   abortC "${LANG_UTIL_ERR_VARIANT_UNSUPPORT} ${VARIANT}"
 fi
