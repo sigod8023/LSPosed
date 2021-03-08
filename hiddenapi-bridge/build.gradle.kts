@@ -14,18 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with LSPosed.  If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2020 EdXposed Contributors
  * Copyright (C) 2021 LSPosed Contributors
  */
 
-#pragma once
+plugins {
+    `java-library`
+}
 
-#include <cstdint>
-
-namespace lspd {
-
-    jboolean XposedBridge_initXResourcesNative(JNIEnv *env, jclass);
-
-    void XResources_rewriteXmlReferencesNative(JNIEnv *env, jclass,
-                                               jlong parserPtr, jobject origRes, jobject repRes);
+dependencies {
+    compileOnly(project(":hiddenapi-stubs"))
 }

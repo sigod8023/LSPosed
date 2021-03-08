@@ -78,6 +78,9 @@
     <string name="module_uninstall">Uninstall</string>
     <string name="module_settings">Module settings</string>
     <string name="view_in_repo">View in Repo</string>
+    <string name="module_uninstall_message">Do you want to uninstall this module?</string>
+    <string name="module_uninstalled">Uninstalled %1$s</string>
+    <string name="module_uninstall_failed">Uninstall unsuccessful</string>
 
     <!-- AppListActivity -->
     <string name="compile_speed">Re-optimize</string>
@@ -140,8 +143,6 @@
     <string name="settings_restoring">Restoring…</string>
     <string name="settings_restore_success">Restore finished!</string>
     <string name="settings_restore_failed">Failed to restore</string>
-    <string name="settings_variant_sandhook">SandHook (Deprecated)</string>
-    <string name="settings_sandhook_deprecated_warning">Warning: SandHook is deprecated and will be removed in the future. \nPlease consider migrating to YAHFA.</string>
     <string name="group_network">Network</string>
     <string name="dns_over_http">DNS over HTTPS</string>
     <string name="dns_over_http_summary">Workaround DNS poisoning in some nations</string>
@@ -167,4 +168,6 @@
     <string name="outdated_manager">Version of LSPosed Manager and LSPosed Core are not consistent. Please re-install the corresponding version.</string>
     <string name="lsposed_not_active">LSPosed is not currently installed or active.</string>
     <string name="verbose_log_not_avaliable">Verbose log is not available, if you just enabled it without reboot, try again after reboot.</string>
+    <string name="NotInstall">Not Installed</string>
+    <string name="NotInstallDetail">LSPosed is not Installed</string>
 </resources>

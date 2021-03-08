@@ -42,7 +42,7 @@
             android:key="theme_color"
             android:title="@string/theme_color"
             app:iconSpaceReserved="false" />
-        <com.takisoft.preferencex.SimpleMenuPreference
+        <rikka.preference.SimpleMenuPreference
             android:defaultValue="MODE_NIGHT_FOLLOW_SYSTEM"
             android:entries="@array/theme_texts"
             android:entryValues="@array/theme_values"
@@ -61,16 +61,6 @@
         android:key="group_framework"
         android:title="@string/settings_group_framework"
         app:iconSpaceReserved="false">
-
-        <com.takisoft.preferencex.SimpleMenuPreference
-            android:defaultValue="1"
-            android:entries="@array/variant_texts"
-            android:entryValues="@array/variant_values"
-            android:key="variant"
-            android:summary="%s"
-            android:title="@string/settings_variant"
-            android:persistent="false"
-            app:iconSpaceReserved="false" />
 
         <SwitchPreference
             android:defaultValue="false"
