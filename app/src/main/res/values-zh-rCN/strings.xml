@@ -19,8 +19,6 @@
   -->
 
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name" translatable="false">LSPosed</string>
-    <string name="Activated">%s 已激活</string>
     <string name="Install">安装</string>
     <string name="InstallDetail">点按安装 LSPosed</string>
     <string name="Modules">模块</string>
@@ -65,7 +63,7 @@
     <!-- Settings tab -->
     <string name="settings_group_framework">框架</string>
     <string name="settings_enable_resources">启用资源钩子</string>
-    <string name="settings_enable_resources_summary"><b>警告: </b> 资源钩子为实验性</string>
+    <string name="settings_enable_resources_summary"><b>警告: </b> 资源钩子为实验性的特性</string>
 
     <!-- Support tab -->
 
@@ -91,14 +89,9 @@
     <string name="loading">正在加载…</string>
     <string name="scroll_bottom">滚动到底部</string>
 
-    <string name="android_sdk" translatable="false">Android %2$s (%1$s, API %3$d)</string>
-    <string name="android_sdk_preview" translatable="false">Android %1$s Preview</string>
-
     <!-- LSPd related -->
     <string name="compile_speed_msg">优化中…</string>
     <string name="compile_done">优化完成。</string>
-
-    <string name="about_source" translatable="false">https://github.com/LSPosed/LSPosed/</string>
 
     <string name="pref_title_disable_verbose_log">禁用详细日志</string>
     <string name="logs_cannot_read">无法读取日志: \n</string>
@@ -117,7 +110,6 @@
     <string name="sort_by_update_time">更新时间</string>
     <string name="sort_by_update_time_reverse">更新时间（降序）</string>
     <string name="settings_group_theme">主题</string>
-    <string name="settings_variant">变体</string>
     <string name="menu_show_system_apps">系统应用</string>
     <string name="menu_sort">排序…</string>
     <string name="enable_module">启用模块</string>
@@ -183,4 +175,19 @@
     <string name="module_uninstall_message">要卸载此模块吗？</string>
     <string name="module_uninstalled">已卸载%1$s</string>
     <string name="module_uninstall_failed">卸载失败</string>
+    <string name="repo_load_failed">模块仓库加载失败：%s</string>
+    <string name="info_api_version">API 版本</string>
+    <string name="info_framework_version">框架版本</string>
+    <string name="info_manager_version">管理器版本</string>
+    <string name="info_system_version">系统版本</string>
+    <string name="info_device">设备</string>
+    <string name="info_system_abi">系统架构</string>
+    <string name="theme_color_summary">应用中最常见的颜色</string>
+    <string name="activated">已激活</string>
+    <string name="partial_activated">部分激活</string>
+    <string name="selinux_policy_not_loaded_summary">SEPolicy 未被正确加载</string>
+    <string name="selinux_policy_not_loaded"><![CDATA[<b>警告：</b>SEPolicy 未被正确加载，作用于系统框架的模块将不起作用。<br>请将此报告给 <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> 开发者。]]></string>
+    <string name="NotInstall">未安装</string>
+    <string name="NotInstallDetail">LSPosed 未安装</string>
+    <string name="about_translators">译者：%s</string>
 </resources>
