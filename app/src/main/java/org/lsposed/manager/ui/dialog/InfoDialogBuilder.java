@@ -27,12 +27,13 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.core.text.HtmlCompat;
 
-import java.util.Locale;
-
 import org.lsposed.manager.BuildConfig;
 import org.lsposed.manager.ConfigManager;
 import org.lsposed.manager.R;
 import org.lsposed.manager.databinding.DialogInfoBinding;
+
+import java.util.Locale;
+
 import rikka.core.util.ClipboardUtils;
 
 public class InfoDialogBuilder extends BlurBehindDialogBuilder {
@@ -54,25 +55,44 @@ public class InfoDialogBuilder extends BlurBehindDialogBuilder {
         binding.device.setText(getDevice());
         binding.systemAbi.setText(Build.SUPPORTED_ABIS[0]);
 
-        if (ConfigManager.isPermissive()) {
-            binding.selinux.setVisibility(View.VISIBLE);
-            binding.selinux.setText(HtmlCompat.fromHtml(context.getString(R.string.selinux_permissive), HtmlCompat.FROM_HTML_MODE_LEGACY));
-        } else if (!ConfigManager.isSepolicyLoaded()) {
-            binding.selinux.setVisibility(View.VISIBLE);
-            binding.selinux.setText(HtmlCompat.fromHtml(context.getString(R.string.selinux_policy_not_loaded), HtmlCompat.FROM_HTML_MODE_LEGACY));
+        if (!ConfigManager.isSepolicyLoaded()) {
+            binding.note.setVisibility(View.VISIBLE);
+            binding.note.setText(HtmlCompat.fromHtml(context.getString(R.string.selinux_policy_not_loaded), HtmlCompat.FROM_HTML_MODE_LEGACY));
+        } else if (!ConfigManager.systemServerRequested()) {
+            binding.note.setVisibility(View.VISIBLE);
+            binding.note.setText(HtmlCompat.fromHtml(context.getString(R.string.system_inject_fail), HtmlCompat.FROM_HTML_MODE_LEGACY));
+        } else if (!ConfigManager.dex2oatFlagsLoaded()) {
+            binding.note.setVisibility(View.VISIBLE);
+            binding.note.setText(HtmlCompat.fromHtml(context.getString(R.string.system_prop_incorrect), HtmlCompat.FROM_HTML_MODE_LEGACY));
         }
 
         setView(binding.getRoot());
 
         setPositiveButton(android.R.string.ok, null);
-        setNeutralButton(android.R.string.copy, (dialog, which) -> ClipboardUtils.put(context,
-                String.format(Locale.US, "%s\n%s\n\n%s\n%s\n\n%s\n%s\n\n%s\n%s\n\n%s\n%s\n\n%s\n%s",
-                        context.getString(R.string.info_api_version), binding.apiVersion.getText(),
-                        context.getString(R.string.info_framework_version), binding.frameworkVersion.getText(),
-                        context.getString(R.string.info_manager_version), binding.managerVersion.getText(),
-                        context.getString(R.string.info_system_version), binding.systemVersion.getText(),
-                        context.getString(R.string.info_device), binding.device.getText(),
-                        context.getString(R.string.info_system_abi), binding.systemAbi.getText())));
+        String info = context.getString(R.string.info_api_version) +
+                "\n" +
+                binding.apiVersion.getText() +
+                "\n\n" +
+                context.getString(R.string.info_framework_version) +
+                "\n" +
+                binding.frameworkVersion.getText() +
+                "\n\n" +
+                context.getString(R.string.info_manager_version) +
+                "\n" +
+                binding.managerVersion.getText() +
+                "\n\n" +
+                context.getString(R.string.info_system_version) +
+                "\n" +
+                binding.systemVersion.getText() +
+                "\n\n" +
+                context.getString(R.string.info_device) +
+                "\n" +
+                binding.device.getText() +
+                "\n\n" +
+                context.getString(R.string.info_system_abi) +
+                "\n" +
+                binding.systemAbi.getText();
+        setNeutralButton(android.R.string.copy, (dialog, which) -> ClipboardUtils.put(context, info));
     }
 
     private String getDevice() {

@@ -33,20 +33,23 @@
 namespace lspd {
     using namespace std::literals::string_literals;
 
-    static inline int32_t GetAndroidApiLevel() {
-        char prop_value[PROP_VALUE_MAX];
-        __system_property_get("ro.build.version.sdk", prop_value);
-        return atoi(prop_value);
+    inline int32_t GetAndroidApiLevel() {
+        static int32_t api_level = []() {
+            char prop_value[PROP_VALUE_MAX];
+            __system_property_get("ro.build.version.sdk", prop_value);
+            return atoi(prop_value);
+        }();
+        return api_level;
     }
 
 
     template<char... chars>
     struct tstring : public std::integer_sequence<char, chars...> {
-        const char *c_str() const {
+        inline constexpr static const char *c_str() {
             return str_;
         }
 
-        operator std::string_view() const {
+        inline constexpr operator std::string_view() const {
             return c_str();
         }
 

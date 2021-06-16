@@ -34,10 +34,10 @@ import androidx.appcompat.app.AlertDialog;
 import org.lsposed.manager.App;
 import org.lsposed.manager.BuildConfig;
 import org.lsposed.manager.ConfigManager;
-import org.lsposed.manager.Constants;
 import org.lsposed.manager.R;
 import org.lsposed.manager.util.NavUtil;
 import org.lsposed.manager.util.theme.ThemeUtil;
+
 import rikka.core.res.ResourcesKt;
 import rikka.material.app.MaterialActivity;
 
@@ -53,22 +53,20 @@ public class BaseActivity extends MaterialActivity {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // make sure the versions are consistent
-        String coreVersionStr = ConfigManager.getXposedVersionName();
-        // for showing the version mismatch dialog
-        if (coreVersionStr == null) {
-            coreVersionStr = Constants.getXposedVersion();
-        }
-        if (coreVersionStr != null) {
-            if (!BuildConfig.VERSION_NAME.equals(coreVersionStr)) {
-                new AlertDialog.Builder(this)
-                        .setMessage(R.string.outdated_manager)
-                        .setPositiveButton(android.R.string.ok, (dialog, id) -> {
-                            NavUtil.startURL(this, getString(R.string.about_source));
-                            finish();
-                        })
-                        .setCancelable(false)
-                        .show();
+        if (!BuildConfig.DEBUG) {
+            // make sure the versions are consistent
+            String coreVersionStr = ConfigManager.getXposedVersionName();
+            if (coreVersionStr != null) {
+                if (!BuildConfig.VERSION_NAME.equals(coreVersionStr)) {
+                    new AlertDialog.Builder(this)
+                            .setMessage(R.string.outdated_manager)
+                            .setPositiveButton(android.R.string.ok, (dialog, id) -> {
+                                NavUtil.startURL(this, getString(R.string.about_source));
+                                finish();
+                            })
+                            .setCancelable(false)
+                            .show();
+                }
             }
         }
     }

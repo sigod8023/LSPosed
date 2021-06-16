@@ -22,12 +22,13 @@ package org.lsposed.manager.util;
 
 import androidx.annotation.NonNull;
 
+import org.lsposed.manager.App;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Locale;
 
-import org.lsposed.manager.App;
 import okhttp3.Dns;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -36,20 +37,14 @@ import okhttp3.dnsoverhttps.DnsOverHttps;
 public class DoHDNS implements Dns {
 
     private static DnsOverHttps cloudflare;
-    private static DnsOverHttps alidns;
+    private static DnsOverHttps tuna;
+    private static DnsOverHttps dnspod;
 
     public DoHDNS(OkHttpClient client) {
-        cloudflare = new DnsOverHttps.Builder()
-                .resolvePrivateAddresses(true)
-                .client(client)
-                .url(HttpUrl.get("https://cloudflare-dns.com/dns-query"))
-                .build();
-
-        alidns = new DnsOverHttps.Builder()
-                .resolvePrivateAddresses(true)
-                .client(client)
-                .url(HttpUrl.get("https://dns.alidns.com/dns-query"))
-                .build();
+        var builder = new DnsOverHttps.Builder().resolvePrivateAddresses(true).client(client);
+        cloudflare = builder.url(HttpUrl.get("https://cloudflare-dns.com/dns-query")).build();
+        tuna = builder.url(HttpUrl.get("https://101.6.6.6:8443/dns-query")).build();
+        dnspod = builder.url(HttpUrl.get("https://doh.pub/dns-query")).build();
     }
 
     @NonNull
@@ -61,8 +56,12 @@ public class DoHDNS implements Dns {
             } catch (UnknownHostException e) {
                 try {
                     if ("CN".equals(Locale.getDefault().getCountry()))
-                        return alidns.lookup(hostname);
-                } catch (UnknownHostException ignored) {
+                        return tuna.lookup(hostname);
+                } catch (UnknownHostException exception) {
+                    try {
+                        return dnspod.lookup(hostname);
+                    } catch (UnknownHostException ignored) {
+                    }
                 }
             }
         }

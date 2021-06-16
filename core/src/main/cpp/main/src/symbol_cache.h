@@ -24,11 +24,22 @@
 
 #ifndef LSPOSED_SYMBOL_CACHE_H
 #define LSPOSED_SYMBOL_CACHE_H
-#include <atomic>
+
+#include <memory>
+namespace SandHook {
+    class ElfImg;
+}
 
 namespace lspd {
-    static std::atomic_bool initialized;
-    static void* symbol_do_dlopen = nullptr;
+    extern bool sym_initialized;
+    extern std::unique_ptr<const SandHook::ElfImg> art_img;
+    extern void *sym_do_dlopen;
+    extern void *sym_openInMemoryDexFilesNative;
+    extern void *sym_createCookieWithArray;
+    extern void *sym_createCookieWithDirectBuffer;
+    extern void *sym_openDexFileNative;
+    extern void *sym_setTrusted;
+    extern void *sym_set_table_override;
 
     void InitSymbolCache();
 }

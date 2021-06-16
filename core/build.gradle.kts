@@ -17,23 +17,18 @@
  * Copyright (C) 2021 LSPosed Contributors
  */
 
+import com.android.build.api.variant.impl.ApplicationVariantImpl
+import com.android.build.gradle.BaseExtension
+import com.android.ide.common.signing.KeystoreHelper
 import org.apache.tools.ant.filters.FixCrLfFilter
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.daemon.common.toHexString
-
+import java.io.PrintStream
 import java.security.MessageDigest
 
 plugins {
     id("com.android.application")
     kotlin("android")
-}
-
-fun calcSha256(file: File): String {
-    val md = MessageDigest.getInstance("SHA-256")
-    file.forEachBlock(4096) { bytes, size ->
-        md.update(bytes, 0, size)
-    }
-    return md.digest().toHexString()
 }
 
 val moduleName = "LSPosed"
@@ -42,9 +37,9 @@ val moduleId = "riru_lsposed"
 val authors = "LSPosed Developers"
 
 val riruModuleId = "lsposed"
-val moduleMinRiruApiVersion = 24
-val moduleMinRiruVersionName = "v24.1.0"
-val moduleMaxRiruApiVersion = 24
+val moduleMinRiruApiVersion = 25
+val moduleMinRiruVersionName = "25.0.1"
+val moduleMaxRiruApiVersion = 25
 
 val defaultManagerPackageName: String by rootProject.extra
 val apiCode: Int by rootProject.extra
@@ -52,57 +47,72 @@ val apiCode: Int by rootProject.extra
 val androidTargetSdkVersion: Int by rootProject.extra
 val androidMinSdkVersion: Int by rootProject.extra
 val androidBuildToolsVersion: String by rootProject.extra
-val androidCompileSdkVersion: Int by rootProject.extra
+val androidCompileSdkVersion: String by rootProject.extra
 val androidCompileNdkVersion: String by rootProject.extra
 val androidSourceCompatibility: JavaVersion by rootProject.extra
 val androidTargetCompatibility: JavaVersion by rootProject.extra
-
-val zipPathMagiskReleasePath: String by rootProject.extra
 
 val verCode: Int by rootProject.extra
 val verName: String by rootProject.extra
 
 dependencies {
-    implementation("dev.rikka.ndk:riru:24.0.0")
-    implementation(files("libs/dobby_prefab.aar"))
-    implementation("com.android.tools.build:apksig:4.1.2")
+    implementation("dev.rikka.ndk:riru:${moduleMinRiruVersionName}")
+    implementation("dev.rikka.ndk.thirdparty:cxx:1.1.0")
+    implementation("com.android.tools.build:apksig:7.0.0-beta03")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
+    implementation("de.upb.cs.swt:axml:2.1.1")
     compileOnly(project(":hiddenapi-stubs"))
-    compileOnly("androidx.annotation:annotation:1.1.0")
+    compileOnly("androidx.annotation:annotation:1.2.0")
     implementation(project(":interface"))
     implementation(project(":hiddenapi-bridge"))
     implementation(project(":manager-service"))
 }
 
 android {
-    compileSdkVersion(androidCompileSdkVersion)
+    compileSdkPreview = androidCompileSdkVersion
     ndkVersion = androidCompileNdkVersion
-    buildToolsVersion(androidBuildToolsVersion)
+    buildToolsVersion = androidBuildToolsVersion
 
     buildFeatures {
         prefab = true
     }
 
     defaultConfig {
-        applicationId("org.lsposed.lspd")
-        minSdkVersion(androidMinSdkVersion)
-        targetSdkVersion(androidTargetSdkVersion)
+        applicationId = "org.lsposed.lspd"
+        minSdk = androidMinSdkVersion
+        targetSdk = androidTargetSdkVersion
+        versionCode = verCode
+        versionName = verName
         multiDexEnabled = false
 
         externalNativeBuild {
             cmake {
                 abiFilters("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-                cppFlags("-std=c++20 -ffixed-x18 -Qunused-arguments -fno-rtti -fno-exceptions -fomit-frame-pointer -fpie -fPIC")
-                cFlags("-std=c11 -ffixed-x18 -Qunused-arguments -fno-rtti -fno-exceptions -fomit-frame-pointer -fpie -fPIC")
-                arguments("-DRIRU_MODULE_API_VERSION=$moduleMaxRiruApiVersion",
-                        "-DRIRU_MODULE_VERSION=$verCode",
-                        "-DRIRU_MODULE_VERSION_NAME:STRING=\"$verName\"")
+                val flags = arrayOf(
+                    "-ffixed-x18",
+                    "-Qunused-arguments",
+                    "-fno-rtti", "-fno-exceptions",
+                    "-fno-stack-protector",
+                    "-fomit-frame-pointer",
+                    "-Wno-builtin-macro-redefined",
+                    "-Wl,--exclude-libs,ALL",
+                    "-D__FILE__=__FILE_NAME__",
+                    "-DRIRU_MODULE",
+                    "-DRIRU_MODULE_API_VERSION=$moduleMaxRiruApiVersion",
+                    """-DMODULE_NAME=\"$riruModuleId\"""",
+                )
+                cppFlags("-std=c++20", *flags)
+                cFlags("-std=c18", *flags)
+                arguments(
+                    "-DANDROID_STL=none",
+                    "-DVERSION_CODE=$verCode",
+                    "-DVERSION_NAME=$verName",
+                )
                 targets("lspd")
             }
         }
 
         buildConfigField("int", "API_CODE", "$apiCode")
-        buildConfigField("String", "VERSION_NAME", "\"$verName\"")
-        buildConfigField("Integer", "VERSION_CODE", verCode.toString())
         buildConfigField("String", "DEFAULT_MANAGER_PACKAGE_NAME", "\"$defaultManagerPackageName\"")
     }
 
@@ -112,22 +122,49 @@ android {
     }
 
     buildTypes {
-        named("debug") {
+        debug {
             externalNativeBuild {
                 cmake {
-                    cppFlags("-O0")
-                    cFlags("-O0")
+                    arguments.addAll(
+                        arrayOf(
+                            "-DCMAKE_CXX_FLAGS_DEBUG=-Og",
+                            "-DCMAKE_C_FLAGS_DEBUG=-Og"
+                        )
+                    )
                 }
             }
         }
-        named("release") {
+        release {
             isMinifyEnabled = true
             proguardFiles("proguard-rules.pro")
 
             externalNativeBuild {
                 cmake {
-                    cppFlags("-fvisibility=hidden -fvisibility-inlines-hidden -Os -Wno-unused-value -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--strip-all -fno-unwind-tables")
-                    cFlags("-fvisibility=hidden -fvisibility-inlines-hidden -Os -Wno-unused-value -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--strip-all -fno-unwind-tables")
+                    val flags = arrayOf(
+                        "-fvisibility=hidden",
+                        "-fvisibility-inlines-hidden",
+                        "-Wno-unused-value",
+                        "-ffunction-sections",
+                        "-fdata-sections",
+                        "-Wl,--gc-sections",
+                        "-Wl,--strip-all",
+                        "-fno-unwind-tables",
+                        "-fno-asynchronous-unwind-tables"
+                    )
+                    cppFlags.addAll(flags)
+                    cFlags.addAll(flags)
+                    val configFlags = arrayOf(
+                        "-Oz",
+                        "-DNDEBUG"
+                    ).joinToString(" ")
+                    arguments.addAll(
+                        arrayOf(
+                            "-DCMAKE_CXX_FLAGS_RELEASE=$configFlags",
+                            "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=$configFlags",
+                            "-DCMAKE_C_FLAGS_RELEASE=$configFlags",
+                            "-DCMAKE_C_FLAGS_RELWITHDEBINFO=$configFlags"
+                        )
+                    )
                 }
             }
         }
@@ -142,145 +179,163 @@ android {
         targetCompatibility(androidTargetCompatibility)
         sourceCompatibility(androidSourceCompatibility)
     }
+
 }
 
-afterEvaluate {
+androidComponents.onVariants { v ->
+    val variant = v as ApplicationVariantImpl
+    val variantCapped = variant.name.capitalize()
+    val variantLowered = variant.name.toLowerCase()
+    val zipFileName = "$moduleName-$verName-$verCode-$variantLowered.zip"
+    val magiskDir = "$buildDir/magisk/$variantLowered"
 
-    android.applicationVariants.forEach { variant ->
-        val variantCapped = variant.name.capitalize()
-        val variantLowered = variant.name.toLowerCase()
-        val zipFileName = "$moduleName-$verName-$verCode-$variantLowered.zip"
-
-        delete(file(zipPathMagiskReleasePath))
-
-        val prepareMagiskFilesTask = task("prepareMagiskFiles$variantCapped") {
-            dependsOn("assemble$variantCapped")
-            dependsOn(":app:assemble$variantCapped")
-            doFirst {
-                copy {
-                    from("$projectDir/tpl/module.prop.tpl")
-                    into(zipPathMagiskReleasePath)
-                    rename("module.prop.tpl", "module.prop")
-                    expand("moduleId" to moduleId,
-                            "versionName" to verName,
-                            "versionCode" to verCode,
-                            "authorList" to authors,
-                            "minRiruVersionName" to moduleMinRiruVersionName)
-                    filter(mapOf("eol" to FixCrLfFilter.CrLf.newInstance("lf")), FixCrLfFilter::class.java)
-                }
-                copy {
-                    from("${rootProject.projectDir}/README.md")
-                    into(file(zipPathMagiskReleasePath))
+    afterEvaluate {
+        val app = rootProject.project(":app").extensions.getByName<BaseExtension>("android")
+        val outSrcDir = file("$buildDir/generated/source/signInfo/${variantLowered}")
+        val outSrc = file("$outSrcDir/org/lsposed/lspd/util/SignInfo.java")
+        val signInfoTask = tasks.register("generate${variantCapped}SignInfo") {
+            dependsOn(":app:validateSigning${variantCapped}")
+            outputs.file(outSrc)
+            doLast {
+                val sign = app.buildTypes.named(variantLowered).get().signingConfig
+                outSrc.parentFile.mkdirs()
+                val certificateInfo = KeystoreHelper.getCertificateInfo(
+                    sign?.storeType,
+                    sign?.storeFile,
+                    sign?.storePassword,
+                    sign?.keyPassword,
+                    sign?.keyAlias
+                )
+                PrintStream(outSrc).apply {
+                    println("package org.lsposed.lspd.util;")
+                    println("public final class SignInfo {")
+                    print("public static final byte[] CERTIFICATE = {")
+                    val bytes = certificateInfo.certificate.encoded
+                    print(bytes.joinToString(",") { it.toString() })
+                    println("};")
+                    println("}")
                 }
             }
-            val libPathRelease = "${buildDir}/intermediates/cmake/$variantLowered/obj"
-            doLast {
-                val dexOutPath = if (variant.name.contains("release"))
-                    "$buildDir/intermediates/dex/$variantLowered/minify${variantCapped}WithR8" else
-                    "$buildDir/intermediates/dex/$variantLowered/mergeDex$variantCapped"
-                copy {
-                    from(dexOutPath) {
-                        rename("classes.dex", "lspd.dex")
-                    }
-                    into(file(zipPathMagiskReleasePath + "framework/"))
+        }
+        variant.variantData.registerJavaGeneratingTask(signInfoTask, arrayListOf(outSrcDir))
+    }
+
+    val prepareMagiskFilesTask = task("prepareMagiskFiles$variantCapped") {
+        dependsOn("assemble$variantCapped")
+        dependsOn(":app:assemble$variantCapped")
+        doLast {
+            sync {
+                into(magiskDir)
+                from("${rootProject.projectDir}/README.md")
+                from("$projectDir/magisk_module") {
+                    exclude("riru.sh", "module.prop")
                 }
-                copy {
-                    from("${projectDir}/template_override")
-                    into(zipPathMagiskReleasePath)
-                    exclude("riru.sh")
+                from("$projectDir/magisk_module") {
+                    include("module.prop")
+                    expand(
+                        "moduleId" to moduleId,
+                        "versionName" to verName,
+                        "versionCode" to verCode,
+                        "authorList" to authors,
+                        "minRiruVersionName" to moduleMinRiruVersionName
+                    )
+                    filter(
+                        mapOf("eol" to FixCrLfFilter.CrLf.newInstance("lf")),
+                        FixCrLfFilter::class.java
+                    )
                 }
-                copy {
-                    from("${projectDir}/template_override")
-                    into(zipPathMagiskReleasePath)
+                from("${projectDir}/magisk_module") {
                     include("riru.sh")
                     filter { line ->
-                        line.replace("%%%RIRU_MODULE_ID%%%", riruModuleId)
-                            .replace("%%%RIRU_MODULE_API_VERSION%%%", moduleMaxRiruApiVersion.toString())
-                            .replace("%%%RIRU_MODULE_MIN_API_VERSION%%%", moduleMinRiruApiVersion.toString())
-                            .replace("%%%RIRU_MODULE_MIN_RIRU_VERSION_NAME%%%", moduleMinRiruVersionName)
+                        line.replace("%%%RIRU_MODULE_LIB_NAME%%%", "lspd")
+                            .replace(
+                                "%%%RIRU_MODULE_API_VERSION%%%",
+                                moduleMaxRiruApiVersion.toString()
+                            )
+                            .replace(
+                                "%%%RIRU_MODULE_MIN_API_VERSION%%%",
+                                moduleMinRiruApiVersion.toString()
+                            )
+                            .replace(
+                                "%%%RIRU_MODULE_MIN_RIRU_VERSION_NAME%%%",
+                                moduleMinRiruVersionName
+                            )
+                            .replace(
+                                "%%RIRU_MODULE_DEBUG%%",
+                                if (variantLowered == "debug") "true" else "false"
+                            )
                     }
-                    filter(mapOf("eol" to FixCrLfFilter.CrLf.newInstance("lf")), FixCrLfFilter::class.java)
+                    filter(
+                        mapOf("eol" to FixCrLfFilter.CrLf.newInstance("lf")),
+                        FixCrLfFilter::class.java
+                    )
                 }
-                copy {
-                    include("lspd")
-                    rename("lspd", "liblspd.so")
-                    from("$libPathRelease/armeabi-v7a")
-                    into("$zipPathMagiskReleasePath/riru/lib")
-                }
-                copy {
-                    include("lspd")
-                    rename("lspd", "liblspd.so")
-                    from("$libPathRelease/arm64-v8a")
-                    into("$zipPathMagiskReleasePath/riru/lib64")
-                }
-                copy {
-                    include("lspd")
-                    rename("lspd", "liblspd.so")
-                    from("$libPathRelease/x86")
-                    into("$zipPathMagiskReleasePath/riru_x86/lib")
-                }
-                copy {
-                    include("lspd")
-                    rename("lspd", "liblspd.so")
-                    from("$libPathRelease/x86_64")
-                    into("$zipPathMagiskReleasePath/riru_x86/lib64")
-                }
-                copy {
-                    from("${project(":app").projectDir}/build/outputs/apk/${variantLowered}")
+                from("${project(":app").buildDir}/outputs/apk/${variantLowered}") {
                     include("*.apk")
                     rename(".*\\.apk", "manager.apk")
-                    into(zipPathMagiskReleasePath)
                 }
-                // generate sha1sum
-                fileTree(zipPathMagiskReleasePath).matching {
-                    exclude("README.md", "META-INF")
-                }.visit {
-                    if (isDirectory) return@visit
-                    file(file.path + ".sha256").writeText(calcSha256(file))
+                into("lib") {
+                    from("${buildDir}/intermediates/cmake/$variantLowered/obj")
+                    exclude("**/*.txt")
+                }
+                val dexOutPath = if (variantLowered == "release")
+                    "$buildDir/intermediates/dex/$variantLowered/minify${variantCapped}WithR8" else
+                    "$buildDir/intermediates/dex/$variantLowered/mergeDex$variantCapped"
+                into("framework") {
+                    from(dexOutPath)
+                    rename("classes.dex", "lspd.dex")
                 }
             }
-        }
-
-        val zipTask = task("zip${variantCapped}", Zip::class) {
-            dependsOn(prepareMagiskFilesTask)
-            archiveFileName.set(zipFileName)
-            destinationDirectory.set(file("$projectDir/release"))
-            from(zipPathMagiskReleasePath)
-        }
-
-        task("push${variantCapped}", Exec::class) {
-            dependsOn(zipTask)
-            workingDir("${projectDir}/release")
-            val commands = arrayOf(android.adbExecutable, "push",
-                    zipFileName,
-                    "/data/local/tmp/")
-            if (isWindows) {
-                commandLine("cmd", "/c", commands.joinToString(" "))
-            } else {
-                commandLine(commands)
-            }
-        }
-        task("flash${variantCapped}", Exec::class) {
-            dependsOn(tasks.getByPath("push${variantCapped}"))
-            workingDir("${projectDir}/release")
-            val commands = arrayOf(android.adbExecutable, "shell", "su", "-c",
-                    "magisk --install-module /data/local/tmp/${zipFileName}")
-            if (isWindows) {
-                commandLine("cmd", "/c", commands.joinToString(" "))
-            } else {
-                commandLine(commands)
-            }
-        }
-        task("flashAndReboot${variantCapped}", Exec::class) {
-            dependsOn(tasks.getByPath("flash${variantCapped}"))
-            workingDir("${projectDir}/release")
-            val commands = arrayOf(android.adbExecutable, "shell", "reboot")
-            if (isWindows) {
-                commandLine("cmd", "/c", commands.joinToString(" "))
-            } else {
-                commandLine(commands)
+            fileTree(magiskDir).visit {
+                if (isDirectory) return@visit
+                val md = MessageDigest.getInstance("SHA-256")
+                file.forEachBlock(4096) { bytes, size ->
+                    md.update(bytes, 0, size)
+                }
+                file(file.path + ".sha256").writeText(md.digest().toHexString())
             }
         }
     }
 
+    val zipTask = task("zip${variantCapped}", Zip::class) {
+        dependsOn(prepareMagiskFilesTask)
+        archiveFileName.set(zipFileName)
+        destinationDirectory.set(file("$projectDir/release"))
+        from(magiskDir)
+    }
+
+    val adb = androidComponents.sdkComponents.adb.get().asFile.absolutePath
+    val pushTask = task("push${variantCapped}", Exec::class) {
+        dependsOn(zipTask)
+        workingDir("${projectDir}/release")
+        val commands = arrayOf(adb, "push", zipFileName, "/data/local/tmp/")
+        if (isWindows) {
+            commandLine("cmd", "/c", commands.joinToString(" "))
+        } else {
+            commandLine(commands)
+        }
+    }
+    val flashTask = task("flash${variantCapped}", Exec::class) {
+        dependsOn(pushTask)
+        workingDir("${projectDir}/release")
+        val commands = arrayOf(
+            adb, "shell", "su", "-c",
+            "magisk --install-module /data/local/tmp/${zipFileName}"
+        )
+        if (isWindows) {
+            commandLine("cmd", "/c", commands.joinToString(" "))
+        } else {
+            commandLine(commands)
+        }
+    }
+    task("flashAndReboot${variantCapped}", Exec::class) {
+        dependsOn(flashTask)
+        workingDir("${projectDir}/release")
+        val commands = arrayOf(adb, "shell", "reboot")
+        if (isWindows) {
+            commandLine("cmd", "/c", commands.joinToString(" "))
+        } else {
+            commandLine(commands)
+        }
+    }
 }

@@ -33,14 +33,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import org.lsposed.manager.BuildConfig;
+import org.lsposed.manager.R;
+import org.lsposed.manager.databinding.ActivityCrashReportBinding;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-
-import org.lsposed.manager.BuildConfig;
-import org.lsposed.manager.R;
-import org.lsposed.manager.databinding.ActivityCrashReportBinding;
 
 public class CrashReportActivity extends AppCompatActivity {
     ActivityCrashReportBinding binding;
@@ -54,7 +54,7 @@ public class CrashReportActivity extends AppCompatActivity {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
             //Are there any devices without clipboard...?
             if (clipboard != null) {
-                ClipData clip = ClipData.newPlainText("edcrash", getAllErrorDetailsFromIntent(getIntent()));
+                ClipData clip = ClipData.newPlainText("LSPManagerCrashInfo", getAllErrorDetailsFromIntent(getIntent()));
                 clipboard.setPrimaryClip(clip);
                 Snackbar.make(binding.snackbar, R.string.copy_toast_msg, Snackbar.LENGTH_SHORT).show();
             }

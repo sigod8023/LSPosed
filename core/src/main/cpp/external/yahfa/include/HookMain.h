@@ -3,26 +3,27 @@
 
 #include <jni.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace yahfa {
+    constexpr uint32_t kAccPublic = 0x0001;  // class, field, method, ic
+    constexpr uint32_t kAccPrivate = 0x0002;  // field, method, ic
+    constexpr uint32_t kAccProtected = 0x0004;  // field, method, ic
+    constexpr uint32_t kAccStatic = 0x0008;  // field, method, ic
 
-void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion);
+    void init(JNIEnv *env, jclass clazz, jint sdkVersion);
 
-jobject Java_lab_galaxy_yahfa_HookMain_findMethodNative(JNIEnv *env, jclass clazz,
-                                                        jclass targetClass, jstring methodName,
-                                                        jstring methodSig);
+    jobject findMethodNative(JNIEnv *env, jclass clazz,
+                             jclass targetClass, jstring methodName,
+                             jstring methodSig);
 
-jboolean Java_lab_galaxy_yahfa_HookMain_backupAndHookNative(JNIEnv *env, jclass clazz,
-                                                            jobject target, jobject hook,
-                                                            jobject backup);
+    jboolean backupAndHookNative(JNIEnv *env, jclass clazz,
+                                 jobject target, jobject hook,
+                                 jobject backup);
 
-void setNonCompilable(void *method);
+    void *getArtMethod(JNIEnv *env, jobject jmethod);
 
-void *getArtMethodYahfa(JNIEnv *env, jobject jmethod);
+    uint32_t getAccessFlags(void* art_method);
 
-#ifdef __cplusplus
+    void setAccessFlags(void* art_method, uint32_t access_flags);
 }
-#endif
 
 #endif // HOOK_MAIN_H

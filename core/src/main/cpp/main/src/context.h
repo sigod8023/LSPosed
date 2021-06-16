@@ -27,6 +27,7 @@
 #include <tuple>
 #include <string_view>
 #include "utils.h"
+#include "jni_helper.h"
 
 namespace lspd {
     class Context {
@@ -40,13 +41,11 @@ namespace lspd {
             return std::move(instance_);
         }
 
-        inline auto GetCurrentClassLoader() const { return inject_class_loader_; }
+        inline jobject GetCurrentClassLoader() const { return inject_class_loader_; }
 
         void CallOnPostFixupStaticTrampolines(void *class_ptr);
 
-        void FindAndCall(JNIEnv *env, const char *method_name, const char *method_sig, ...) const;
-
-        inline jclass FindClassFromCurrentLoader(JNIEnv *env, std::string_view className) const {
+        inline ScopedLocalRef<jclass> FindClassFromCurrentLoader(JNIEnv *env, std::string_view className) const {
             return FindClassFromLoader(env, GetCurrentClassLoader(), className);
         };
 
@@ -58,7 +57,7 @@ namespace lspd {
 
         void OnNativeForkSystemServerPre(JNIEnv *env);
 
-        void PreLoadDex(const std::string &dex_paths);
+        void PreLoadDex(std::string_view dex_paths);
 
     private:
         inline static std::unique_ptr<Context> instance_ = std::make_unique<Context>();
@@ -70,7 +69,7 @@ namespace lspd {
         jclass class_linker_class_ = nullptr;
         jmethodID post_fixup_static_mid_ = nullptr;
         bool skip_ = false;
-        std::vector<char> dex{};
+        std::vector<std::byte> dex{};
 
         Context() {}
 
@@ -78,8 +77,12 @@ namespace lspd {
 
         void Init(JNIEnv *env);
 
-        static jclass FindClassFromLoader(JNIEnv *env, jobject class_loader,
+        static ScopedLocalRef<jclass> FindClassFromLoader(JNIEnv *env, jobject class_loader,
                                           std::string_view class_name);
+        static void setAllowUnload(bool unload);
+
+        template<typename ...Args>
+        void FindAndCall(JNIEnv *env, std::string_view method_name, std::string_view method_sig, Args&&... args) const;
 
         friend std::unique_ptr<Context> std::make_unique<Context>();
     };

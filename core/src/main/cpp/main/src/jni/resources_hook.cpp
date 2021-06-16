@@ -25,6 +25,8 @@
 #include <dl_util.h>
 #include <framework/androidfw/resource_types.h>
 #include <byte_order.h>
+#include <HookMain.h>
+#include <elf_util.h>
 #include "native_util.h"
 #include "resources_hook.h"
 
@@ -46,34 +48,33 @@ namespace lspd {
     static TYPE_NEXT ResXMLParser_next = nullptr;
     static TYPE_RESTART ResXMLParser_restart = nullptr;
     static TYPE_GET_ATTR_NAME_ID ResXMLParser_getAttributeNameID = nullptr;
-    static TYPE_STRING_AT ResStringPool_stringAt = nullptr;
 
     static bool PrepareSymbols() {
-        ScopedDlHandle fw_handle(kLibFwPath.c_str());
-        if (!fw_handle.IsValid()) {
+        SandHook::ElfImg fw(kLibFwName);
+        if (!fw.isValid()) {
             return false;
         };
-        if (!(ResXMLParser_next = fw_handle.DlSym<TYPE_NEXT>(
+        if (!(ResXMLParser_next = fw.getSymbAddress<TYPE_NEXT>(
                 "_ZN7android12ResXMLParser4nextEv"))) {
             return false;
         }
-        if (!(ResXMLParser_restart = fw_handle.DlSym<TYPE_RESTART>(
+        if (!(ResXMLParser_restart = fw.getSymbAddress<TYPE_RESTART>(
                 "_ZN7android12ResXMLParser7restartEv"))) {
             return false;
         };
-        if (!(ResXMLParser_getAttributeNameID = fw_handle.DlSym<TYPE_GET_ATTR_NAME_ID>(
+        if (!(ResXMLParser_getAttributeNameID = fw.getSymbAddress<TYPE_GET_ATTR_NAME_ID>(
                 LP_SELECT("_ZNK7android12ResXMLParser18getAttributeNameIDEj",
                           "_ZNK7android12ResXMLParser18getAttributeNameIDEm")))) {
             return false;
         }
-        return (ResStringPool_stringAt = fw_handle.DlSym<TYPE_STRING_AT>(
-                LP_SELECT("_ZNK7android13ResStringPool8stringAtEjPj",
-                          "_ZNK7android13ResStringPool8stringAtEmPm"))) != nullptr;
+        return android::ResStringPool::setup(fw);
     }
 
     LSP_DEF_NATIVE_METHOD(jboolean, ResourcesHook, initXResourcesNative) {
-        classXResources = Context::GetInstance()->FindClassFromCurrentLoader(env, kXResourcesClassName);
-        if (!classXResources) {
+        if (auto classXResources_ = Context::GetInstance()->FindClassFromCurrentLoader(env,
+                                                                                       kXResourcesClassName)) {
+            classXResources = JNI_NewGlobalRef(env, classXResources_);
+        } else {
             LOGE("Error while loading XResources class '%s':", kXResourcesClassName);
             return JNI_FALSE;
         }
@@ -92,26 +93,38 @@ namespace lspd {
         if (!PrepareSymbols()) {
             return JNI_FALSE;
         }
-        classXResources = reinterpret_cast<jclass>(env->NewGlobalRef(classXResources));
         return JNI_TRUE;
     }
 
     // @ApiSensitive(Level.MIDDLE)
-    LSP_DEF_NATIVE_METHOD(jboolean, ResourcesHook, removeFinalFlagNative, jclass target_class) {
+    LSP_DEF_NATIVE_METHOD(jboolean, ResourcesHook, makeInheritable, jclass target_class,
+                          jobjectArray constructors) {
         if (target_class) {
-            jclass class_clazz = JNI_FindClass(env, "java/lang/Class");
-            jfieldID java_lang_Class_accessFlags = JNI_GetFieldID(
+            static auto class_clazz = JNI_NewGlobalRef(env, JNI_FindClass(env, "java/lang/Class"));
+            static jfieldID java_lang_Class_accessFlags = JNI_GetFieldID(
                     env, class_clazz, "accessFlags", "I");
             jint access_flags = env->GetIntField(target_class, java_lang_Class_accessFlags);
             env->SetIntField(target_class, java_lang_Class_accessFlags, access_flags & ~kAccFinal);
+            for (auto i = 0u; i < env->GetArrayLength(constructors); ++i) {
+                auto constructor = env->GetObjectArrayElement(constructors, i);
+                void *method = yahfa::getArtMethod(env, constructor);
+                uint32_t flags = yahfa::getAccessFlags(method);
+                if ((flags & yahfa::kAccPublic) == 0 && (flags & yahfa::kAccProtected) == 0) {
+                    flags |= yahfa::kAccProtected;
+                    flags &= ~yahfa::kAccPrivate;
+                }
+                yahfa::setAccessFlags(method, flags);
+            }
             return JNI_TRUE;
         }
         return JNI_FALSE;
     }
 
-    LSP_DEF_NATIVE_METHOD(jobject, ResourcesHook, buildDummyClassLoader, jobject parent, jobject resource_super_class, jobject typed_array_super_class) {
+    LSP_DEF_NATIVE_METHOD(jobject, ResourcesHook, buildDummyClassLoader, jobject parent,
+                          jobject resource_super_class, jobject typed_array_super_class) {
         using namespace startop::dex;
-        static auto in_memory_classloader = (jclass)env->NewGlobalRef(env->FindClass( "dalvik/system/InMemoryDexClassLoader"));
+        static auto in_memory_classloader = JNI_NewGlobalRef(env, JNI_FindClass(env,
+                                                                                "dalvik/system/InMemoryDexClassLoader"));
         static jmethodID initMid = JNI_GetMethodID(env, in_memory_classloader, "<init>",
                                                    "(Ljava/nio/ByteBuffer;Ljava/lang/ClassLoader;)V");
         DexBuilder dex_file;
@@ -120,17 +133,19 @@ namespace lspd {
         auto current_thread = art::Thread::Current();
         ClassBuilder xresource_builder{
                 dex_file.MakeClass("xposed.dummy.XResourcesSuperClass")};
-        xresource_builder.setSuperClass(TypeDescriptor::FromDescriptor(art::mirror::Class(current_thread.DecodeJObject(resource_super_class)).GetDescriptor(&storage)));
+        xresource_builder.setSuperClass(TypeDescriptor::FromDescriptor(art::mirror::Class(
+                current_thread.DecodeJObject(resource_super_class)).GetDescriptor(&storage)));
 
         ClassBuilder xtypearray_builder{
                 dex_file.MakeClass("xposed.dummy.XTypedArraySuperClass")};
-        xtypearray_builder.setSuperClass(TypeDescriptor::FromDescriptor(art::mirror::Class(current_thread.DecodeJObject(typed_array_super_class)).GetDescriptor(&storage)));
+        xtypearray_builder.setSuperClass(TypeDescriptor::FromDescriptor(art::mirror::Class(
+                current_thread.DecodeJObject(typed_array_super_class)).GetDescriptor(&storage)));
 
         slicer::MemView image{dex_file.CreateImage()};
 
-        auto dex_buffer = env->NewDirectByteBuffer(const_cast<void*>(image.ptr()), image.size());
+        auto dex_buffer = env->NewDirectByteBuffer(const_cast<void *>(image.ptr()), image.size());
         return JNI_NewObject(env, in_memory_classloader, initMid,
-                                      dex_buffer, parent);
+                             dex_buffer, parent).release();
     }
 
     LSP_DEF_NATIVE_METHOD(void, ResourcesHook, rewriteXmlReferencesNative,
@@ -161,15 +176,13 @@ namespace lspd {
                         // only replace attribute name IDs for app packages
                         if (attrNameID >= 0 && (size_t) attrNameID < mTree.mNumResIds &&
                             dtohl(mResIds[attrNameID]) >= 0x7f000000) {
-                            size_t attNameLen;
-                            const char16_t *attrName = ResStringPool_stringAt(&(mTree.mStrings),
-                                                                              attrNameID,
-                                                                              &attNameLen);
+                            auto attrName = mTree.mStrings.stringAt(attrNameID);
                             jint attrResID = env->CallStaticIntMethod(classXResources,
                                                                       methodXResourcesTranslateAttrId,
                                                                       env->NewString(
-                                                                              (const jchar *) attrName,
-                                                                              attNameLen), origRes);
+                                                                              (const jchar *) attrName.data_,
+                                                                              attrName.length_),
+                                                                      origRes);
                             if (env->ExceptionCheck())
                                 goto leave;
 
@@ -208,9 +221,12 @@ namespace lspd {
 
     static JNINativeMethod gMethods[] = {
             LSP_NATIVE_METHOD(ResourcesHook, initXResourcesNative, "()Z"),
-            LSP_NATIVE_METHOD(ResourcesHook, removeFinalFlagNative, "(Ljava/lang/Class;)Z"),
-            LSP_NATIVE_METHOD(ResourcesHook, buildDummyClassLoader, "(Ljava/lang/ClassLoader;Ljava/lang/Class;Ljava/lang/Class;)Ljava/lang/ClassLoader;"),
-            LSP_NATIVE_METHOD(ResourcesHook, rewriteXmlReferencesNative,"(JLandroid/content/res/XResources;Landroid/content/res/Resources;)V")
+            LSP_NATIVE_METHOD(ResourcesHook, makeInheritable,
+                              "(Ljava/lang/Class;[Ljava/lang/reflect/Constructor;)Z"),
+            LSP_NATIVE_METHOD(ResourcesHook, buildDummyClassLoader,
+                              "(Ljava/lang/ClassLoader;Ljava/lang/Class;Ljava/lang/Class;)Ljava/lang/ClassLoader;"),
+            LSP_NATIVE_METHOD(ResourcesHook, rewriteXmlReferencesNative,
+                              "(JLandroid/content/res/XResources;Landroid/content/res/Resources;)V")
     };
 
     void RegisterResourcesHook(JNIEnv *env) {
