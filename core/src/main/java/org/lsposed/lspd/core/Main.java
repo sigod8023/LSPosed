@@ -41,7 +41,6 @@ import org.lsposed.lspd.hooker.SystemMainHooker;
 import org.lsposed.lspd.service.ServiceManager;
 import org.lsposed.lspd.util.ModuleLogger;
 import org.lsposed.lspd.util.Utils;
-import org.lsposed.lspd.util.Versions;
 import org.lsposed.lspd.yahfa.hooker.YahfaHooker;
 
 import java.io.File;
@@ -70,16 +69,6 @@ public class Main {
                 new LoadedApkCstrHooker());
     }
 
-    public static void startSystemServerHook() {
-        StartBootstrapServicesHooker sbsHooker = new StartBootstrapServicesHooker();
-        Object[] paramTypesAndCallback = Versions.hasR() ?
-                new Object[]{"com.android.server.utils.TimingsTraceAndSlog", sbsHooker} :
-                new Object[]{sbsHooker};
-        XposedHelpers.findAndHookMethod("com.android.server.SystemServer",
-                SystemMainHooker.systemServerCL,
-                "startBootstrapServices", paramTypesAndCallback);
-    }
-
     private static void installBootstrapHooks(boolean isSystem, String appDataDir) {
         // Initialize the Xposed framework
         try {
@@ -98,7 +87,7 @@ public class Main {
         }
     }
 
-    private static void forkPostCommon(boolean isSystem, String appDataDir, String niceName) {
+    public static void forkPostCommon(boolean isSystem, String appDataDir, String niceName) {
         // init logger
         YahfaHooker.init();
         ModuleLogger.initLogger(serviceClient.getModuleLogger());
