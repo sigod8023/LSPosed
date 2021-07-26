@@ -8,6 +8,7 @@ import android.system.Os;
 import android.system.OsConstants;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import java.io.File;
@@ -16,6 +17,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -26,7 +28,7 @@ import java.util.zip.ZipFile;
 import hidden.ByteBufferDexClassLoader;
 
 @SuppressWarnings("ConstantConditions")
-public final class InMemoryDelegateLastClassLoader extends ByteBufferDexClassLoader {
+public final class LspModuleClassLoader extends ByteBufferDexClassLoader {
     private static final String zipSeparator = "!/";
     private final String apk;
     private final List<File> nativeLibraryDirs = new ArrayList<>();
@@ -40,18 +42,18 @@ public final class InMemoryDelegateLastClassLoader extends ByteBufferDexClassLoa
         return result;
     }
 
-    private InMemoryDelegateLastClassLoader(ByteBuffer[] dexBuffers,
-                                            ClassLoader parent,
-                                            String apk) {
+    private LspModuleClassLoader(ByteBuffer[] dexBuffers,
+                                 ClassLoader parent,
+                                 String apk) {
         super(dexBuffers, parent);
         this.apk = apk;
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    private InMemoryDelegateLastClassLoader(ByteBuffer[] dexBuffers,
-                                            String librarySearchPath,
-                                            ClassLoader parent,
-                                            String apk) {
+    private LspModuleClassLoader(ByteBuffer[] dexBuffers,
+                                 String librarySearchPath,
+                                 ClassLoader parent,
+                                 String apk) {
         super(dexBuffers, librarySearchPath, parent);
         initNativeLibraryDirs(librarySearchPath);
         this.apk = apk;
@@ -115,6 +117,18 @@ public final class InMemoryDelegateLastClassLoader extends ByteBufferDexClassLoa
     }
 
     @Override
+    public String getLdLibraryPath() {
+        var result = new StringBuilder();
+        for (var directory : nativeLibraryDirs) {
+            if (result.length() > 0) {
+                result.append(':');
+            }
+            result.append(directory);
+        }
+        return result.toString();
+    }
+
+    @Override
     protected URL findResource(String name) {
         try {
             var urlHandler = new ClassPathURLStreamHandler(apk);
@@ -152,12 +166,23 @@ public final class InMemoryDelegateLastClassLoader extends ByteBufferDexClassLoa
         return new CompoundEnumeration<>(resources);
     }
 
-    public static InMemoryDelegateLastClassLoader loadApk(File apk, String librarySearchPath, ClassLoader parent) {
+    @NonNull
+    @Override
+    public String toString() {
+        return "LspModuleClassLoader[" +
+                "module=" + apk + "," +
+                "nativeLibraryDirs=" + Arrays.toString(nativeLibraryDirs.toArray()) + "," +
+                super.toString() + "]";
+    }
+
+    public static LspModuleClassLoader loadApk(File apk,
+                                               String librarySearchPath,
+                                               ClassLoader parent) {
         var byteBuffers = new ArrayList<ByteBuffer>();
         try (var apkFile = new ZipFile(apk)) {
-            int secondaryNumber = 2;
+            int secondary = 2;
             for (var dexFile = apkFile.getEntry("classes.dex"); dexFile != null;
-                 dexFile = apkFile.getEntry("classes" + secondaryNumber + ".dex"), secondaryNumber++) {
+                 dexFile = apkFile.getEntry("classes" + secondary + ".dex"), secondary++) {
                 try (var in = apkFile.getInputStream(dexFile)) {
                     var byteBuffer = ByteBuffer.allocate(in.available());
                     byteBuffer.mark();
@@ -173,10 +198,10 @@ public final class InMemoryDelegateLastClassLoader extends ByteBufferDexClassLoa
         }
         var dexBuffers = new ByteBuffer[byteBuffers.size()];
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return new InMemoryDelegateLastClassLoader(byteBuffers.toArray(dexBuffers),
+            return new LspModuleClassLoader(byteBuffers.toArray(dexBuffers),
                     librarySearchPath, parent, apk.getAbsolutePath());
         } else {
-            var cl = new InMemoryDelegateLastClassLoader(byteBuffers.toArray(dexBuffers),
+            var cl = new LspModuleClassLoader(byteBuffers.toArray(dexBuffers),
                     parent, apk.getAbsolutePath());
             cl.initNativeLibraryDirs(librarySearchPath);
             return cl;
