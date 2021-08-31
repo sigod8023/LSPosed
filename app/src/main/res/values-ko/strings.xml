@@ -21,8 +21,8 @@
 <resources>
     <!-- MainActivity -->
     <string name="info">정보</string>
-    <string name="Install">설치</string>
-    <string name="InstallDetail">LSPosed를 설치하려면 탭</string>
+    <string name="install">설치</string>
+    <string name="install_summary">LSPosed를 설치하려면 탭</string>
     <string name="Modules">모듈</string>
     <plurals name="modules_enabled_count">
         <item quantity="one">모듈 %d개가 활성화됨</item>
@@ -51,12 +51,9 @@
     <string name="info_system_abi">System ABI</string>
 
     <!-- LogsActivity -->
-    <string name="menuSend">전송</string>
     <string name="menuSaveToSd">저장</string>
-    <string name="nav_item_logs">상세 로그</string>
-    <string name="nav_item_logs_err">모듈 로그</string>
-    <string name="dont_show_again">다시 표시 안 함</string>
-    <string name="logs_save_failed">저장 실패:</string>
+    <string name="nav_item_logs_lsp">상세 로그</string>
+    <string name="nav_item_logs_module">모듈 로그</string>
     <string name="menuClearLog">로그 지우기</string>
     <string name="logs_cleared">로그를 성공적으로 지웠습니다.</string>
     <string name="scroll_top">맨 위로 스크롤</string>
@@ -65,7 +62,6 @@
     <string name="logs_cannot_read">로그를 읽지 못함: \n</string>
     <string name="menuReload">리로드</string>
     <string name="logs_clear_failed_2">로그를 지우지 못했습니다.</string>
-    <string name="not_logcat_2">다른 사용자가 Android Logcat을 요청했다면 섹션이 잘못되어 있습니다. 이것은 LSPosed 로그입니다. logcat이 필요한 경우 XDA에서 필요한 정보를 찾을 수 있습니다.</string>
 
     <!-- Notification -->
     <string name="module_is_not_activated_yet">LSPosed 모듈이 아직 활성화되지 않았습니다.</string>
@@ -100,13 +96,10 @@
     <string name="compile_failed">최적화에 실패했거나 반환 값이 비어 있습니다.</string>
     <string name="compile_failed_with_info">최적화 실패: </string>
     <string name="sort_by_name">응용 프로그램 이름별로 정렬</string>
-    <string name="sort_by_name_reverse">응용 프로그램 이름별로 정렬 (역순)</string>
     <string name="sort_by_package_name">패키지 이름별로 정렬</string>
-    <string name="sort_by_package_name_reverse">패키지 이름별로 정렬 (역순)</string>
     <string name="sort_by_install_time">설치 시간별로 정렬</string>
-    <string name="sort_by_install_time_reverse">설치 시간별로 정렬 (역순)</string>
     <string name="sort_by_update_time">업데이트 시간별로 정렬</string>
-    <string name="sort_by_update_time_reverse">업데이트 시간별로 정렬 (역순)</string>
+    <string name="sort_reverse">역순</string>
     <string name="menu_show_system_apps">시스템 앱</string>
     <string name="menu_sort">정렬…</string>
     <string name="enable_module">모듈 활성화</string>
@@ -144,13 +137,7 @@
     <string name="settings_backup_and_restore">백업 및 복원</string>
     <string name="settings_backup_and_restore_summery">모듈 목록 및 범위 목록을 백업 또는 복원합니다.</string>
     <string name="settings_backup">백업</string>
-    <string name="settings_backuping">백업 중…</string>
-    <string name="settings_backup_success">백업 완료!</string>
-    <string name="settings_backup_failed">백업 실패</string>
     <string name="settings_restore">복원</string>
-    <string name="settings_restoring">복원 중…</string>
-    <string name="settings_restore_success">복원 완료!!</string>
-    <string name="settings_restore_failed">복원 실패</string>
     <string name="group_network">네트워크</string>
     <string name="dns_over_http">DNS over HTTPS</string>
     <string name="dns_over_http_summary">일부 국가의 DNS 포이즈닝 문제를 해결합니다</string>
@@ -179,8 +166,7 @@
     <string name="outdated_manager">LSPosed Manager 및 LSPosed Core 버전이 일치하지 않습니다. 해당 버전을 다시 설치하십시오.</string>
     <string name="lsposed_not_active">LSPosed가 현재 설치되어 있지 않거나 활성화되어 있지 않습니다.</string>
     <string name="verbose_log_not_avaliable">상세 로그를 사용할 수 없습니다. 재부팅하지 않고 방금 사용하도록 설정한 경우 재부팅 후 다시 시도하십시오.</string>
-    <string name="NotInstall">설치되지 않음</string>
-    <string name="NotInstallDetail">LSPosed가 설치되지 않음</string>
+    <string name="not_install_summary">LSPosed가 설치되지 않음</string>
     <string name="translators"><![CDATA[<a href="https://github.com/green1052">green1052</a>]]></string>
     <string name="copy_toast_msg">복사됨</string>
     <string name="list_empty">¯\\\\_(ツ)_\/¯\n아무것도 없음</string>

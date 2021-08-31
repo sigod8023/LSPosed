@@ -19,37 +19,39 @@
 
 package org.lsposed.lspd.service;
 
-import android.app.ActivityThread;
 import android.content.Context;
 import android.ddm.DdmHandleAppName;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.IServiceManager;
 import android.os.Looper;
 import android.os.Process;
-import android.os.StrictMode;
-import android.system.Os;
 import android.util.Log;
 
 import com.android.internal.os.BinderInternal;
 
 import org.lsposed.lspd.BuildConfig;
 
+import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
+
 import hidden.HiddenApiBridge;
 
 public class ServiceManager {
+    public static final String TAG = "LSPosedService";
+    private static final ConcurrentHashMap<String, LSPModuleService> moduleServices = new ConcurrentHashMap<>();
+    private static final File globalNamespace = new File("/proc/1/root");
+    @SuppressWarnings("FieldCanBeLocal")
     private static LSPosedService mainService = null;
-    private static LSPModuleService moduleService = null;
     private static LSPApplicationService applicationService = null;
     private static LSPManagerService managerService = null;
     private static LSPSystemServerService systemServerService = null;
-    private static Context systemContext = null;
-    public static final String TAG = "LSPosedService";
+    private static LogcatService logcatService = null;
 
     private static void waitSystemService(String name) {
         while (android.os.ServiceManager.getService(name) == null) {
             try {
                 Log.i(TAG, "service " + name + " is not started, wait 1s.");
+                //noinspection BusyWait
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 Log.i(TAG, Log.getStackTraceString(e));
@@ -63,7 +65,7 @@ public class ServiceManager {
 
     // call by ourselves
     public static void start(String[] args) {
-        if (!ConfigManager.getInstance().tryLock()) System.exit(0);
+        if (!ConfigFileManager.tryLock()) System.exit(0);
 
         for (String arg : args) {
             if (arg.equals("--from-service")) {
@@ -78,19 +80,19 @@ public class ServiceManager {
             System.exit(1);
         });
 
+        logcatService = new LogcatService();
+        logcatService.start();
+
         Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
         Looper.prepareMainLooper();
         mainService = new LSPosedService();
-        moduleService = new LSPModuleService();
         applicationService = new LSPApplicationService();
         managerService = new LSPManagerService();
         systemServerService = new LSPSystemServerService();
 
         systemServerService.putBinderForSystemServer();
 
-        Process.killProcess(Os.getppid());
-
-        createSystemContext();
+        DdmHandleAppName.setAppName("lspd", 0);
 
         waitSystemService("package");
         waitSystemService("activity");
@@ -119,18 +121,17 @@ public class ServiceManager {
             }
         });
 
-        try {
-            ConfigManager.grantManagerPermission();
-        } catch (Throwable e) {
-            Log.e(TAG, Log.getStackTraceString(e));
+        // Force logging on boot, now let's see if we need to stop logging
+        if (!ConfigManager.getInstance().verboseLog()) {
+            logcatService.stopVerbose();
         }
 
         Looper.loop();
         throw new RuntimeException("Main thread loop unexpectedly exited");
     }
 
-    public static LSPModuleService getModuleService() {
-        return moduleService;
+    public static LSPModuleService getModuleService(String module) {
+        return moduleServices.computeIfAbsent(module, LSPModuleService::new);
     }
 
     public static LSPApplicationService getApplicationService() {
@@ -147,27 +148,29 @@ public class ServiceManager {
         return managerService;
     }
 
+    public static LogcatService getLogcatService() {
+        return logcatService;
+    }
+
     public static boolean systemServerRequested() {
         return systemServerService.systemServerRequested();
     }
 
-    private static void createSystemContext() {
-        ActivityThread activityThread = ActivityThread.systemMain();
-        systemContext = activityThread.getSystemContext();
-        systemContext.setTheme(android.R.style.Theme_DeviceDefault_Light_DarkActionBar);
-        DdmHandleAppName.setAppName("lspd", 0);
-        var vmPolicy = new StrictMode.VmPolicy.Builder();
-        if (BuildConfig.DEBUG) {
-            vmPolicy.detectAll().penaltyLog();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                vmPolicy.penaltyListener(systemContext.getMainExecutor(),
-                        v -> Log.w(TAG, v.getMessage(), v));
-            }
-        }
-        StrictMode.setVmPolicy(vmPolicy.build());
+    public static File toGlobalNamespace(File file) {
+        return new File(globalNamespace, file.getAbsolutePath());
     }
 
-    public static Context getSystemContext() {
-        return systemContext;
+    public static File toGlobalNamespace(String path) {
+        if (path == null) return null;
+        if (path.startsWith("/")) return new File(globalNamespace, path);
+        else return toGlobalNamespace(new File(path));
+    }
+
+    public static boolean existsInGlobalNamespace(File file) {
+        return toGlobalNamespace(file).exists();
+    }
+
+    public static boolean existsInGlobalNamespace(String path) {
+        return toGlobalNamespace(path).exists();
     }
 }

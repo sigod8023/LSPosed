@@ -29,10 +29,12 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.core.os.BuildCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 
+import org.lsposed.manager.ConfigManager;
 import org.lsposed.manager.NavGraphDirections;
 import org.lsposed.manager.R;
 import org.lsposed.manager.databinding.ActivityMainBinding;
@@ -96,17 +98,20 @@ public class MainActivity extends BaseActivity {
         }
         if (intent.getAction() != null && intent.getAction().equals("android.intent.action.APPLICATION_PREFERENCES")) {
             navController.navigate(R.id.action_settings_fragment);
-        } else if (intent.hasExtra("modulePackageName")) {
+        } else if (intent.hasExtra("modulePackageName") && ConfigManager.isBinderAlive()) {
             navController.navigate(NavGraphDirections.actionAppListFragment(intent.getStringExtra("modulePackageName"), intent.getIntExtra("moduleUserId", -1)));
         } else if (!TextUtils.isEmpty(intent.getDataString())) {
             switch (intent.getDataString()) {
                 case "modules":
+                    if (!ConfigManager.isBinderAlive()) break;
                     navController.navigate(R.id.action_modules_fragment);
                     break;
                 case "logs":
+                    if (!ConfigManager.isBinderAlive()) break;
                     navController.navigate(R.id.action_logs_fragment);
                     break;
                 case "repo":
+                    if (!ConfigManager.isBinderAlive() && !ConfigManager.isMagiskInstalled()) break;
                     navController.navigate(R.id.action_repo_fragment);
                     break;
             }
@@ -120,12 +125,16 @@ public class MainActivity extends BaseActivity {
     }
 
     public void restart() {
-        Bundle savedInstanceState = new Bundle();
-        onSaveInstanceState(savedInstanceState);
-        finish();
-        startActivity(newIntent(savedInstanceState, this));
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        restarting = true;
+        if (BuildCompat.isAtLeastS()) {
+            recreate();
+        } else {
+            Bundle savedInstanceState = new Bundle();
+            onSaveInstanceState(savedInstanceState);
+            finish();
+            startActivity(newIntent(savedInstanceState, this));
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            restarting = true;
+        }
     }
 
     @Override

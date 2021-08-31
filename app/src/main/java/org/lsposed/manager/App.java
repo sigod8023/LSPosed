@@ -20,14 +20,16 @@
 
 package org.lsposed.manager;
 
-import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
+import android.os.Process;
+import android.system.Os;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
 import androidx.preference.PreferenceManager;
 
 import com.google.gson.JsonParser;
@@ -45,6 +47,8 @@ import java.io.StringWriter;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import okhttp3.Cache;
 import okhttp3.Call;
@@ -65,12 +69,11 @@ public class App extends Application {
     }
 
     public static final String TAG = "LSPosedManager";
-    @SuppressLint("StaticFieldLeak")
     private static App instance = null;
     private static OkHttpClient okHttpClient;
     private static Cache okHttpCache;
     private SharedPreferences pref;
-
+    private ExecutorService executorService;
 
     public static App getInstance() {
         return instance;
@@ -80,38 +83,45 @@ public class App extends Application {
         return instance.pref;
     }
 
+    public static ExecutorService getExecutorService() {
+        return instance.executorService;
+    }
+
+    private void setCrashReport() {
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            throwable.printStackTrace(pw);
+            String stackTraceString = sw.toString();
+
+            //Reduce data to 128KB so we don't get a TransactionTooLargeException when sending the intent.
+            //The limit is 1MB on Android but some devices seem to have it lower.
+            //See: http://developer.android.com/reference/android/os/TransactionTooLargeException.html
+            //And: http://stackoverflow.com/questions/11451393/what-to-do-on-transactiontoolargeexception#comment46697371_12809171
+            if (stackTraceString.length() > 131071) {
+                String disclaimer = " [stack trace too large]";
+                stackTraceString = stackTraceString.substring(0, 131071 - disclaimer.length()) + disclaimer;
+            }
+            Intent intent = new Intent(App.this, CrashReportActivity.class);
+            intent.putExtra(BuildConfig.APPLICATION_ID + ".EXTRA_STACK_TRACE", stackTraceString);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            App.this.startActivity(intent);
+            System.exit(10);
+            Process.killProcess(Os.getpid());
+        });
+    }
+
+    @Override
     public void onCreate() {
         super.onCreate();
         if (!BuildConfig.DEBUG) {
-            try {
-                Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    throwable.printStackTrace(pw);
-                    String stackTraceString = sw.toString();
-
-                    //Reduce data to 128KB so we don't get a TransactionTooLargeException when sending the intent.
-                    //The limit is 1MB on Android but some devices seem to have it lower.
-                    //See: http://developer.android.com/reference/android/os/TransactionTooLargeException.html
-                    //And: http://stackoverflow.com/questions/11451393/what-to-do-on-transactiontoolargeexception#comment46697371_12809171
-                    if (stackTraceString.length() > 131071) {
-                        String disclaimer = " [stack trace too large]";
-                        stackTraceString = stackTraceString.substring(0, 131071 - disclaimer.length()) + disclaimer;
-                    }
-                    Intent intent = new Intent(App.this, CrashReportActivity.class);
-                    intent.putExtra(BuildConfig.APPLICATION_ID + ".EXTRA_STACK_TRACE", stackTraceString);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    App.this.startActivity(intent);
-                    android.os.Process.killProcess(android.os.Process.myPid());
-                    System.exit(10);
-                });
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            setCrashReport();
         }
 
         instance = this;
+
+        executorService = Executors.newCachedThreadPool();
 
         pref = PreferenceManager.getDefaultSharedPreferences(this);
         if ("CN".equals(Locale.getDefault().getCountry())) {
@@ -121,8 +131,9 @@ public class App extends Application {
         }
         DayNightDelegate.setApplicationContext(this);
         DayNightDelegate.setDefaultNightMode(ThemeUtil.getDarkTheme());
-        RepoLoader.getInstance().loadRemoteData();
+
         loadRemoteVersion();
+        RepoLoader.getInstance().loadRemoteData();
     }
 
     @NonNull
@@ -134,8 +145,7 @@ public class App extends Application {
                 request.header("User-Agent", TAG);
                 return chain.proceed(request.build());
             });
-            HttpLoggingInterceptor.Logger logger = s -> Log.v(TAG, s);
-            HttpLoggingInterceptor log = new HttpLoggingInterceptor(logger);
+            HttpLoggingInterceptor log = new HttpLoggingInterceptor();
             log.setLevel(HttpLoggingInterceptor.Level.HEADERS);
             if (BuildConfig.DEBUG) builder.addInterceptor(log);
             okHttpClient = builder.dns(new DoHDNS(builder.build())).build();
@@ -167,7 +177,11 @@ public class App extends Application {
                     var name = info.getAsJsonArray("assets").get(0).getAsJsonObject().get("name").getAsString();
                     var code = Integer.parseInt(name.split("-", 4)[2]);
                     var now = Instant.now().getEpochSecond();
-                    pref.edit().putInt("latest_version", code).putLong("latest_check", now).apply();
+                    pref.edit()
+                            .putInt("latest_version", code)
+                            .putLong("latest_check", now)
+                            .putBoolean("checked", true)
+                            .apply();
                 } catch (Throwable t) {
                     Log.e(App.TAG, t.getMessage(), t);
                 }
@@ -175,21 +189,25 @@ public class App extends Application {
 
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e(App.TAG, e.getMessage(), e);
+                Log.e(App.TAG, "loadRemoteVersion: " + e.getMessage());
+                if (pref.getBoolean("checked", false)) return;
+                pref.edit().putBoolean("checked", true).apply();
             }
         };
         getOkHttpClient().newCall(request).enqueue(callback);
     }
 
     public static boolean needUpdate() {
+        var pref = getPreferences();
+        if (!pref.getBoolean("checked", false)) return false;
         var now = Instant.now();
         var buildTime = Instant.ofEpochSecond(BuildConfig.BUILD_TIME);
-        var check = getPreferences().getLong("latest_check", 0);
+        var check = pref.getLong("latest_check", 0);
         if (check > 0) {
             var checkTime = Instant.ofEpochSecond(check);
             if (checkTime.atOffset(ZoneOffset.UTC).plusDays(30).toInstant().isBefore(now))
                 return true;
-            var code = getPreferences().getInt("latest_version", 0);
+            var code = pref.getInt("latest_version", 0);
             return code > BuildConfig.VERSION_CODE;
         }
         return buildTime.atOffset(ZoneOffset.UTC).plusDays(30).toInstant().isBefore(now);

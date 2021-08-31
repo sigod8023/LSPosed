@@ -22,7 +22,6 @@ package org.lsposed.lspd.core;
 
 import static org.lsposed.lspd.config.LSPApplicationServiceClient.serviceClient;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityThread;
 import android.app.LoadedApk;
 import android.content.pm.ApplicationInfo;
@@ -36,10 +35,8 @@ import org.lsposed.lspd.deopt.PrebuiltMethodsDeopter;
 import org.lsposed.lspd.hooker.CrashDumpHooker;
 import org.lsposed.lspd.hooker.HandleBindAppHooker;
 import org.lsposed.lspd.hooker.LoadedApkCstrHooker;
-import org.lsposed.lspd.hooker.StartBootstrapServicesHooker;
 import org.lsposed.lspd.hooker.SystemMainHooker;
 import org.lsposed.lspd.service.ServiceManager;
-import org.lsposed.lspd.util.ModuleLogger;
 import org.lsposed.lspd.util.Utils;
 import org.lsposed.lspd.yahfa.hooker.YahfaHooker;
 
@@ -49,7 +46,6 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.XposedInit;
 
-@SuppressLint("DefaultLocale")
 public class Main {
     public static void startBootstrapHook(boolean isSystem, String appDataDir) {
         Utils.logD("startBootstrapHook starts: isSystem = " + isSystem);
@@ -79,24 +75,15 @@ public class Main {
         }
     }
 
-    private static void loadModulesSafely() {
-        try {
-            XposedInit.loadModules();
-        } catch (Exception exception) {
-            Utils.logE("error loading module list", exception);
-        }
-    }
-
     public static void forkPostCommon(boolean isSystem, String appDataDir, String niceName) {
         // init logger
         YahfaHooker.init();
-        ModuleLogger.initLogger(serviceClient.getModuleLogger());
         XposedBridge.initXResources();
         XposedInit.startsSystemServer = isSystem;
         PrebuiltMethodsDeopter.deoptBootMethods(); // do it once for secondary zygote
         installBootstrapHooks(isSystem, appDataDir);
         Utils.logI("Loading modules for " + niceName + "/" + Process.myUid());
-        loadModulesSafely();
+        XposedInit.loadModules();
     }
 
     public static void forkAndSpecializePost(String appDataDir, String niceName, IBinder binder) {

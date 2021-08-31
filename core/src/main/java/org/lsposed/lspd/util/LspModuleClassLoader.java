@@ -3,6 +3,7 @@ package org.lsposed.lspd.util;
 import static de.robv.android.xposed.XposedBridge.TAG;
 
 import android.os.Build;
+import android.os.SharedMemory;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
@@ -15,15 +16,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import hidden.ByteBufferDexClassLoader;
 
@@ -175,36 +175,28 @@ public final class LspModuleClassLoader extends ByteBufferDexClassLoader {
                 super.toString() + "]";
     }
 
-    public static LspModuleClassLoader loadApk(File apk,
+    public static LspModuleClassLoader loadApk(String apk,
+                                               List<SharedMemory> dexes,
                                                String librarySearchPath,
                                                ClassLoader parent) {
-        var byteBuffers = new ArrayList<ByteBuffer>();
-        try (var apkFile = new ZipFile(apk)) {
-            int secondary = 2;
-            for (var dexFile = apkFile.getEntry("classes.dex"); dexFile != null;
-                 dexFile = apkFile.getEntry("classes" + secondary + ".dex"), secondary++) {
-                try (var in = apkFile.getInputStream(dexFile)) {
-                    var byteBuffer = ByteBuffer.allocate(in.available());
-                    byteBuffer.mark();
-                    Channels.newChannel(in).read(byteBuffer);
-                    byteBuffer.reset();
-                    byteBuffers.add(byteBuffer);
-                } catch (IOException e) {
-                    Log.w(TAG, "Can not read " + dexFile + " in " + apk, e);
-                }
+        var dexBuffers = dexes.stream().parallel().map(dex -> {
+            try {
+                return dex.mapReadOnly();
+            } catch (ErrnoException e) {
+                Log.w(TAG, "Can not map " + dex, e);
+                return null;
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Can not open " + apk, e);
-        }
-        var dexBuffers = new ByteBuffer[byteBuffers.size()];
+        }).filter(Objects::nonNull).toArray(ByteBuffer[]::new);
+        LspModuleClassLoader cl;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return new LspModuleClassLoader(byteBuffers.toArray(dexBuffers),
-                    librarySearchPath, parent, apk.getAbsolutePath());
+            cl = new LspModuleClassLoader(dexBuffers, librarySearchPath,
+                    parent, apk);
         } else {
-            var cl = new LspModuleClassLoader(byteBuffers.toArray(dexBuffers),
-                    parent, apk.getAbsolutePath());
+            cl = new LspModuleClassLoader(dexBuffers, parent, apk);
             cl.initNativeLibraryDirs(librarySearchPath);
-            return cl;
         }
+        Arrays.stream(dexBuffers).parallel().forEach(SharedMemory::unmap);
+        dexes.stream().parallel().forEach(SharedMemory::close);
+        return cl;
     }
 }

@@ -86,12 +86,12 @@ public class LoadedApkGetCLHooker extends XC_MethodHook {
             lpparam.appInfo = loadedApk.getApplicationInfo();
             lpparam.isFirstApplication = this.isFirstApplication;
 
-            IBinder moduleBinder = serviceClient.requestModuleBinder();
+            IBinder moduleBinder = serviceClient.requestModuleBinder(lpparam.packageName);
             if (moduleBinder != null) {
                 hookNewXSP(lpparam);
             }
 
-            var binder = new ArrayList<IBinder>();
+            var binder = new ArrayList<IBinder>(1);
             var blocked = false;
             var info = loadedApk.getApplicationInfo();
             if (info != null) {
@@ -100,9 +100,12 @@ public class LoadedApkGetCLHooker extends XC_MethodHook {
                 blocked = serviceClient.requestManagerBinder(packageName, path, binder);
             }
             if (binder.size() != 0 && binder.get(0) != null) {
-                InstallerVerifier.hookXposedInstaller(lpparam.classLoader, binder.get(0));
+                var ret = InstallerVerifier.sendBinderToManager(lpparam.classLoader, binder.get(0));
+                if (!ret) InstallerVerifier.hookBadManager(classLoader);
+                Utils.logI("manager trusted, ret=" + ret);
             } else if (blocked) {
-                InstallerVerifier.hookXposedInstaller(classLoader);
+                InstallerVerifier.hookBadManager(classLoader);
+                Utils.logI("manager blocked, packageName=" + packageName);
             } else {
                 XC_LoadPackage.callAll(lpparam);
             }

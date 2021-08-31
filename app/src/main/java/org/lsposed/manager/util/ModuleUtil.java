@@ -47,8 +47,8 @@ public final class ModuleUtil {
     private static ModuleUtil instance = null;
     private final PackageManager pm;
     private final List<ModuleListener> listeners = new CopyOnWriteArrayList<>();
-    private HashSet<String> enabledModules;
-    private Map<Pair<String, Integer>, InstalledModule> installedModules;
+    private HashSet<String> enabledModules = new HashSet<>();
+    private Map<Pair<String, Integer>, InstalledModule> installedModules = new HashMap<>();
     private boolean isReloading = false;
 
     private ModuleUtil() {
@@ -58,8 +58,8 @@ public final class ModuleUtil {
     public static synchronized ModuleUtil getInstance() {
         if (instance == null) {
             instance = new ModuleUtil();
+            instance.reloadInstalledModules();
         }
-        instance.reloadInstalledModules();
         return instance;
     }
 
@@ -80,6 +80,12 @@ public final class ModuleUtil {
             if (isReloading)
                 return;
             isReloading = true;
+        }
+        if (!ConfigManager.isBinderAlive()) {
+            synchronized (this) {
+                isReloading = false;
+            }
+            return;
         }
 
         Map<Pair<String, Integer>, InstalledModule> modules = new HashMap<>();
@@ -106,12 +112,10 @@ public final class ModuleUtil {
 
         try {
             pkg = ConfigManager.getPackageInfo(packageName, PackageManager.GET_META_DATA, userId);
-            if (pkg == null) {
-                throw new NameNotFoundException();
-            }
         } catch (NameNotFoundException e) {
             InstalledModule old = installedModules.remove(Pair.create(packageName, userId));
             if (old != null) {
+                enabledModules.remove(packageName);
                 for (ModuleListener listener : listeners) {
                     listener.onSingleInstalledModuleReloaded();
                 }

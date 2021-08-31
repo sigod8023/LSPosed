@@ -62,7 +62,7 @@ public class HomeFragment extends BaseFragment {
         packageInfo.applicationInfo = applicationInfo;
         packageInfo.versionCode = longVersionCode;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.setLongVersionCode(System.currentTimeMillis());
+            packageInfo.setLongVersionCode(longVersionCode);
         }
         return packageInfo;
     }
@@ -80,11 +80,11 @@ public class HomeFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         BaseActivity activity = (BaseActivity) requireActivity();
+        boolean isBinderAlive = ConfigManager.isBinderAlive();
+        boolean needUpdate = App.needUpdate();
         binding.status.setOnClickListener(v -> {
-            if (ConfigManager.getXposedApiVersion() != -1) {
-                new InfoDialogBuilder(activity)
-                        .setTitle(R.string.info)
-                        .show();
+            if (isBinderAlive && !needUpdate) {
+                new InfoDialogBuilder(activity).setTitle(R.string.info).show();
             } else {
                 NavUtil.startURL(activity, getString(R.string.about_source));
             }
@@ -112,40 +112,40 @@ public class HomeFragment extends BaseFragment {
         Glide.with(binding.appIcon)
                 .load(wrap(activity.getApplicationInfo(), getResources().getConfiguration().hashCode()))
                 .into(binding.appIcon);
-        String installXposedVersion = ConfigManager.getXposedVersionName();
         int cardBackgroundColor;
-        if (installXposedVersion != null) {
+        if (isBinderAlive) {
             if (!ConfigManager.isSepolicyLoaded()) {
                 binding.statusTitle.setText(R.string.partial_activated);
-                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), R.attr.colorWarning);
+                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), rikka.material.R.attr.colorWarning);
                 binding.statusIcon.setImageResource(R.drawable.ic_warning);
                 binding.statusSummary.setText(R.string.selinux_policy_not_loaded_summary);
             } else if (!ConfigManager.systemServerRequested()) {
                 binding.statusTitle.setText(R.string.partial_activated);
-                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), R.attr.colorWarning);
+                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), rikka.material.R.attr.colorWarning);
                 binding.statusIcon.setImageResource(R.drawable.ic_warning);
                 binding.statusSummary.setText(R.string.system_inject_fail_summary);
             } else if (!ConfigManager.dex2oatFlagsLoaded()) {
                 binding.statusTitle.setText(R.string.partial_activated);
-                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), R.attr.colorWarning);
+                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), rikka.material.R.attr.colorWarning);
                 binding.statusIcon.setImageResource(R.drawable.ic_warning);
                 binding.statusSummary.setText(R.string.system_prop_incorrect_summary);
-            } else if (App.needUpdate()) {
+            } else if (needUpdate) {
                 binding.statusTitle.setText(R.string.need_update);
-                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), R.attr.colorWarning);
+                cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), rikka.material.R.attr.colorWarning);
                 binding.statusIcon.setImageResource(R.drawable.ic_warning);
                 binding.statusSummary.setText(R.string.please_update_summary);
             } else {
                 binding.statusTitle.setText(R.string.activated);
                 cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), R.attr.colorNormal);
                 binding.statusIcon.setImageResource(R.drawable.ic_check_circle);
-                binding.statusSummary.setText(String.format(Locale.US, "%s (%d)", installXposedVersion, ConfigManager.getXposedVersionCode()));
+                binding.statusSummary.setText(String.format(Locale.ROOT, "%s (%d)",
+                        ConfigManager.getXposedVersionName(), ConfigManager.getXposedVersionCode()));
             }
         } else {
             cardBackgroundColor = ResourcesKt.resolveColor(activity.getTheme(), R.attr.colorInstall);
             boolean isMagiskInstalled = ConfigManager.isMagiskInstalled();
-            binding.statusTitle.setText(isMagiskInstalled ? R.string.Install : R.string.NotInstall);
-            binding.statusSummary.setText(isMagiskInstalled ? R.string.InstallDetail : R.string.NotInstallDetail);
+            binding.statusTitle.setText(isMagiskInstalled ? R.string.install : R.string.not_installed);
+            binding.statusSummary.setText(isMagiskInstalled ? R.string.install_summary : R.string.not_install_summary);
             if (!isMagiskInstalled) {
                 binding.status.setOnClickListener(null);
                 binding.download.setVisibility(View.GONE);
@@ -171,7 +171,7 @@ public class HomeFragment extends BaseFragment {
 
         @Override
         public void onClick(View v) {
-            if (requireInstalled && ConfigManager.getXposedVersionName() == null) {
+            if (requireInstalled && !ConfigManager.isBinderAlive()) {
                 Snackbar.make(snackbar, R.string.lsposed_not_active, Snackbar.LENGTH_LONG).show();
             } else {
                 getNavController().navigate(fragment);
@@ -182,7 +182,12 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
-        int moduleCount = ModuleUtil.getInstance().getEnabledModulesCount();
+        int moduleCount;
+        if (ConfigManager.isBinderAlive()) {
+            moduleCount = ModuleUtil.getInstance().getEnabledModulesCount();
+        } else {
+            moduleCount = 0;
+        }
         binding.modulesSummary.setText(getResources().getQuantityString(R.plurals.modules_enabled_count, moduleCount, moduleCount));
     }
 

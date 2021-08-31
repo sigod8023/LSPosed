@@ -23,10 +23,10 @@ package org.lsposed.lspd.util;
 import static org.lsposed.lspd.util.SignInfo.CERTIFICATE;
 
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.widget.Toast;
 
 import com.android.apksig.ApkVerifier;
@@ -47,14 +47,17 @@ public class InstallerVerifier {
             if (!result.isVerified()) {
                 return false;
             }
-            return Arrays.equals(result.getSignerCertificates().get(0).getEncoded(), CERTIFICATE);
+            boolean ret = Arrays.equals(result.getSignerCertificates().get(0).getEncoded(), CERTIFICATE);
+            Utils.logI("verifyInstallerSignature: " + ret);
+            return ret;
         } catch (Throwable t) {
             Utils.logE("verifyInstallerSignature: ", t);
             return false;
         }
     }
 
-    public static void hookXposedInstaller(final ClassLoader classLoader) {
+    public static void hookBadManager(final ClassLoader classLoader) {
+        var str = "This app may be destroyed, please download the latest version of this app from the official source.";
         try {
             Class<?> ConstantsClass = XposedHelpers.findClass("org.lsposed.manager.Constants", classLoader);
             XposedHelpers.findAndHookMethod(android.app.Activity.class, "onCreate", Bundle.class, new XC_MethodHook() {
@@ -64,25 +67,27 @@ public class InstallerVerifier {
                         XposedHelpers.callStaticMethod(ConstantsClass, "showErrorToast", 0);
                     } catch (Throwable t) {
                         Utils.logW("showErrorToast: ", t);
-                        Toast.makeText((Context) param.thisObject, "This application has been destroyed, please make sure you download it from the official source.", Toast.LENGTH_LONG).show();
+                        Toast.makeText((Context) param.thisObject, str, Toast.LENGTH_LONG).show();
                     }
-                    new Handler().postDelayed(() -> System.exit(0), 50);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> System.exit(0), 1000);
                 }
             });
         } catch (Throwable t) {
-            Utils.logW("hookXposedInstaller: ", t);
+            Utils.logW("hookBadManager: ", t);
         }
     }
 
-    public static void hookXposedInstaller(final ClassLoader classLoader, IBinder binder) {
-        Utils.logI("Found LSPosed Manager, hooking it");
+    public static boolean sendBinderToManager(final ClassLoader classLoader, IBinder binder) {
+        Utils.logI("Found LSPosed Manager");
         try {
-            Class<?> serviceClass = XposedHelpers.findClass("org.lsposed.manager.receivers.LSPManagerServiceClient", classLoader);
-            XposedHelpers.setStaticObjectField(serviceClass, "binder", binder);
-
-            Utils.logI("Hooked LSPosed Manager");
+            var clazz = XposedHelpers.findClass("org.lsposed.manager.Constants", classLoader);
+            var ret = (boolean) XposedHelpers.callStaticMethod(clazz, "setBinder",
+                    new Class[]{IBinder.class}, binder);
+            Utils.logI("Send binder to LSPosed Manager: " + ret);
+            return ret;
         } catch (Throwable t) {
-            Utils.logW("Could not hook LSPosed Manager", t);
+            Utils.logW("Could not send binder to LSPosed Manager", t);
+            return false;
         }
     }
 }

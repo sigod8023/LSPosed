@@ -23,28 +23,21 @@
     package="org.lsposed.manager">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission
-        android:name="android.permission.INTERACT_ACROSS_USERS"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.WRITE_SECURE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
 
     <application
         android:name=".App"
         android:allowBackup="true"
+        android:hasFragileUserData="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:hasFragileUserData="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup,GoogleAppIndexingWarning"
         tools:targetApi="q">
         <activity
             android:name=".ui.activity.MainActivity"
-            android:label="@string/app_name"
-            android:launchMode="singleInstance"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
@@ -57,29 +50,9 @@
         </activity>
         <activity
             android:name=".ui.activity.CrashReportActivity"
-            android:process=":error_activity" />
+            android:process=":error" />
 
-        <receiver
-            android:name=".receivers.ServiceReceiver"
-            android:exported="true"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL">
-            <intent-filter>
-                <action android:name="org.lsposed.action.MODULE_UPDATED" />
-                <action android:name="org.lsposed.action.MODULE_NOT_ACTIVATAED" />
-
-                <data android:scheme="package" />
-            </intent-filter>
-        </receiver>
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+        <receiver android:name=".receivers.ServiceReceiver" />
     </application>
 
 </manifest>
