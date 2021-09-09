@@ -51,7 +51,7 @@
                     android:layout_height="128dp"
                     android:layout_centerHorizontal="true"
                     android:layout_margin="8dp"
-                    app:srcCompat="@drawable/ic_warning"
+                    app:srcCompat="@drawable/ic_round_warning_24"
                     tools:ignore="ContentDescription" />
 
                 <TextView
@@ -77,7 +77,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="4dp"
-            android:text="@string/cpoy_crash_info"
+            android:text="@string/copy_crash_info"
             android:theme="@style/Widget.AppCompat.Button.Colored" />
     </LinearLayout>
 
