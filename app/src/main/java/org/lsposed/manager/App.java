@@ -21,44 +21,63 @@
 package org.lsposed.manager;
 
 import android.app.Application;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Process;
 import android.system.Os;
+import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 
-import com.google.gson.JsonParser;
-
 import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import org.lsposed.manager.repo.RepoLoader;
 import org.lsposed.manager.ui.activity.CrashReportActivity;
 import org.lsposed.manager.util.DoHDNS;
-import org.lsposed.manager.util.theme.ThemeUtil;
+import org.lsposed.manager.util.ModuleUtil;
+import org.lsposed.manager.util.ThemeUtil;
+import org.lsposed.manager.util.UpdateUtil;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 import okhttp3.Cache;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import rikka.material.app.DayNightDelegate;
+import rikka.material.app.LocaleDelegate;
 
 public class App extends Application {
+    public static final FutureTask<String> HTML_TEMPLATE = new FutureTask<>(() -> readWebviewHTML("template.html"));
+    public static final FutureTask<String> HTML_TEMPLATE_DARK = new FutureTask<>(() -> readWebviewHTML("template_dark.html"));
+
+    private static String readWebviewHTML(String name) {
+        try {
+            var input = App.getInstance().getAssets().open("webview/" + name);
+            var result = new ByteArrayOutputStream(1024);
+            var buffer = new byte[1024];
+            for (int length; (length = input.read(buffer)) != -1; ) {
+                result.write(buffer, 0, length);
+            }
+            return result.toString(StandardCharsets.UTF_8.name());
+        } catch (IOException e) {
+            Log.e(App.TAG, "read webview HTML", e);
+            return "<html><body>@body@</body></html>";
+        }
+    }
 
     static {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -84,6 +103,10 @@ public class App extends Application {
 
     public static ExecutorService getExecutorService() {
         return instance.executorService;
+    }
+
+    public static boolean isParasitic() {
+        return !Process.isApplicationUid(Process.myUid());
     }
 
     private void setCrashReport() {
@@ -114,7 +137,7 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        if (!BuildConfig.DEBUG) {
+        if (!BuildConfig.DEBUG && !isParasitic()) {
             setCrashReport();
         }
 
@@ -130,9 +153,25 @@ public class App extends Application {
         }
         DayNightDelegate.setApplicationContext(this);
         DayNightDelegate.setDefaultNightMode(ThemeUtil.getDarkTheme());
+        LocaleDelegate.setDefaultLocale(getLocale());
 
-        loadRemoteVersion();
+        registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int userId = intent.getIntExtra(Intent.EXTRA_USER, 0);
+                String packageName = intent.getStringExtra("android.intent.extra.PACKAGES");
+                boolean packageFullyRemoved = intent.getBooleanExtra(Intent.ACTION_PACKAGE_FULLY_REMOVED, false);
+                if (packageName != null) {
+                    ModuleUtil.getInstance().reloadSingleModule(packageName, userId, packageFullyRemoved);
+                }
+            }
+        }, new IntentFilter(Intent.ACTION_PACKAGE_CHANGED));
+
+        UpdateUtil.loadRemoteVersion();
         RepoLoader.getInstance().loadRemoteData();
+
+        executorService.submit(HTML_TEMPLATE);
+        executorService.submit(HTML_TEMPLATE_DARK);
     }
 
     @NonNull
@@ -160,55 +199,11 @@ public class App extends Application {
         return okHttpCache;
     }
 
-    private void loadRemoteVersion() {
-        var request = new Request.Builder()
-                .url("https://api.github.com/repos/LSPosed/LSPosed/releases/latest")
-                .addHeader("Accept", "application/vnd.github.v3+json")
-                .build();
-        var callback = new Callback() {
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) {
-                if (!response.isSuccessful()) return;
-                var body = response.body();
-                if (body == null) return;
-                try {
-                    var info = JsonParser.parseReader(body.charStream()).getAsJsonObject();
-                    var name = info.getAsJsonArray("assets").get(0).getAsJsonObject().get("name").getAsString();
-                    var code = Integer.parseInt(name.split("-", 4)[2]);
-                    var now = Instant.now().getEpochSecond();
-                    pref.edit()
-                            .putInt("latest_version", code)
-                            .putLong("latest_check", now)
-                            .putBoolean("checked", true)
-                            .apply();
-                } catch (Throwable t) {
-                    Log.e(App.TAG, t.getMessage(), t);
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e(App.TAG, "loadRemoteVersion: " + e.getMessage());
-                if (pref.getBoolean("checked", false)) return;
-                pref.edit().putBoolean("checked", true).apply();
-            }
-        };
-        getOkHttpClient().newCall(request).enqueue(callback);
-    }
-
-    public static boolean needUpdate() {
-        var pref = getPreferences();
-        if (!pref.getBoolean("checked", false)) return false;
-        var now = Instant.now();
-        var buildTime = Instant.ofEpochSecond(BuildConfig.BUILD_TIME);
-        var check = pref.getLong("latest_check", 0);
-        if (check > 0) {
-            var checkTime = Instant.ofEpochSecond(check);
-            if (checkTime.atOffset(ZoneOffset.UTC).plusDays(30).toInstant().isBefore(now))
-                return true;
-            var code = pref.getInt("latest_version", 0);
-            return code > BuildConfig.VERSION_CODE;
+    public static Locale getLocale() {
+        String tag = getPreferences().getString("language", null);
+        if (TextUtils.isEmpty(tag) || "SYSTEM".equals(tag)) {
+            return Locale.getDefault();
         }
-        return buildTime.atOffset(ZoneOffset.UTC).plusDays(30).toInstant().isBefore(now);
+        return Locale.forLanguageTag(tag);
     }
 }

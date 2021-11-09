@@ -6,6 +6,8 @@ import org.lsposed.lspd.models.Application;
 
 
 interface ILSPManagerService {
+    String getApi() = 1;
+
     ParceledListSlice<PackageInfo> getInstalledPackagesFromAllUsers(int flags, boolean filterNoProcess) = 2;
 
     String[] enabledModules() = 3;
@@ -17,10 +19,6 @@ interface ILSPManagerService {
     boolean setModuleScope(String packageName, in ParceledListSlice<Application> scope) = 6;
 
     ParceledListSlice<Application> getModuleScope(String packageName) = 7;
-
-    boolean isResourceHook() = 9;
-
-    void setResourceHook(boolean enabled) = 10;
 
     boolean isVerboseLog() = 11;
 
@@ -63,4 +61,18 @@ interface ILSPManagerService {
     void setHiddenIcon(boolean hide) = 33;
 
     Map<String,ParcelFileDescriptor> getLogs() = 34;
+
+    void restartFor(in Intent intent) = 35;
+
+    void createShortcut() = 36;
+
+    boolean isAddShortcut() = 37;
+
+    void setAddShortcut(boolean enabled) = 38;
+
+    oneway void flashZip(String zipPath, in ParcelFileDescriptor outputStream) = 39;
+
+    boolean performDexOptMode(String packageName) = 40;
+
+    List<String> getDenyListPackages() = 41;
 }

@@ -70,8 +70,8 @@ android {
 
     lint {
         disable += "MissingTranslation"
-        abortOnError = true
-        checkReleaseBuilds = false
+        isAbortOnError = true
+        isCheckReleaseBuilds = false
     }
 
     packagingOptions {
@@ -161,44 +161,43 @@ tasks.whenTaskAdded {
 
 dependencies {
     val glideVersion = "4.12.0"
-    val okhttpVersion = "4.9.1"
-    val navVersion = "2.4.0-alpha08"
+    val navVersion: String by rootProject.extra
     annotationProcessor("com.github.bumptech.glide:compiler:$glideVersion")
-    implementation("androidx.activity:activity:1.3.1")
-    implementation("androidx.browser:browser:1.3.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.0")
-    implementation("androidx.core:core:1.6.0")
+    implementation("androidx.activity:activity:1.4.0")
+    implementation("androidx.browser:browser:1.4.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.1")
+    implementation("androidx.core:core:1.7.0")
     implementation("androidx.fragment:fragment:1.3.6")
     implementation("androidx.navigation:navigation-fragment:$navVersion")
     implementation("androidx.navigation:navigation-ui:$navVersion")
+    implementation("androidx.preference:preference:1.1.1")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation("androidx.slidingpanelayout:slidingpanelayout:1.2.0-beta01")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("com.github.bumptech.glide:glide:$glideVersion")
-    implementation("com.google.android.material:material:1.5.0-alpha03")
-    implementation("com.google.code.gson:gson:2.8.8")
-    implementation("com.takisoft.preferencex:preferencex:1.1.0")
-    implementation("com.takisoft.preferencex:preferencex-colorpicker:1.1.0")
-    implementation("com.squareup.okhttp3:okhttp:$okhttpVersion")
-    implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:$okhttpVersion")
-    implementation("com.squareup.okhttp3:logging-interceptor:$okhttpVersion")
+    implementation("com.google.android.material:material:1.5.0-alpha05")
+    implementation("com.google.code.gson:gson:2.8.9")
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.9.2"))
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:okhttp-dnsoverhttps")
+    implementation("com.squareup.okhttp3:logging-interceptor")
     implementation("dev.rikka.rikkax.appcompat:appcompat:1.2.0-rc01")
-    implementation("dev.rikka.rikkax.core:core:1.3.2")
+    implementation("dev.rikka.rikkax.core:core:1.3.3")
     implementation("dev.rikka.rikkax.insets:insets:1.1.0")
     implementation("dev.rikka.rikkax.material:material:1.6.6")
     implementation("dev.rikka.rikkax.preference:simplemenu-preference:1.0.3")
     implementation("dev.rikka.rikkax.recyclerview:recyclerview-ktx:1.2.2")
-    implementation("dev.rikka.rikkax.widget:borderview:1.0.1")
+    implementation("dev.rikka.rikkax.widget:borderview:1.1.0")
     implementation("dev.rikka.rikkax.widget:switchbar:1.0.2")
-    implementation("dev.rikka.rikkax.layoutinflater:layoutinflater:1.0.1")
+    implementation("dev.rikka.rikkax.layoutinflater:layoutinflater:1.1.0")
     implementation("me.zhanghai.android.appiconloader:appiconloader:1.3.1")
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:2.0")
     implementation(project(":manager-service"))
 }
 
 configurations.all {
-    resolutionStrategy {
-        exclude(group = "org.jetbrains", module = "annotations")
-        exclude(group = "androidx.appcompat", module = "appcompat")
-    }
+    exclude("org.jetbrains", "annotations")
+    exclude("androidx.appcompat", "appcompat")
+    exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk7")
+    exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
 }

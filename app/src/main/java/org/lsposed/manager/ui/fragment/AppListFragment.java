@@ -66,10 +66,11 @@ public class AppListFragment extends BaseFragment {
         if (module == null) {
             return binding.getRoot();
         }
-        binding.appBar.setRaised(true);
+        binding.appBar.setLiftable(true);
+        binding.appBar.setLifted(true);
         String title;
         if (module.userId != 0) {
-            title = String.format(Locale.US, "%s (%d)", module.getAppName(), module.userId);
+            title = String.format(Locale.ROOT, "%s (%d)", module.getAppName(), module.userId);
         } else {
             title = module.getAppName();
         }
@@ -150,12 +151,12 @@ public class AppListFragment extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
-        scopeAdapter.refresh();
+        if (scopeAdapter != null) scopeAdapter.refresh();
     }
 
     @Override
     public void onDestroy() {
-        scopeAdapter.onDestroy();
+        if (scopeAdapter != null) scopeAdapter.onDestroy();
 
         super.onDestroy();
     }

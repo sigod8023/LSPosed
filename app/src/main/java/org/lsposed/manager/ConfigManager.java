@@ -137,18 +137,18 @@ public class ConfigManager {
         return list;
     }
 
-    public static boolean isResourceHookEnabled() {
+    public static boolean isAddShortcut() {
         try {
-            return LSPManagerServiceHolder.getService().isResourceHook();
+            return LSPManagerServiceHolder.getService().isAddShortcut();
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
             return false;
         }
     }
 
-    public static boolean setResourceHookEnabled(boolean enabled) {
+    public static boolean setAddShortcut(boolean enabled) {
         try {
-            LSPManagerServiceHolder.getService().setResourceHook(enabled);
+            LSPManagerServiceHolder.getService().setAddShortcut(enabled);
             return true;
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
@@ -263,7 +263,9 @@ public class ConfigManager {
     }
 
     public static boolean isMagiskInstalled() {
-        return Arrays.stream(System.getenv("PATH").split(File.pathSeparator))
+        var path = System.getenv("PATH");
+        if (path == null) return false;
+        else return Arrays.stream(path.split(File.pathSeparator))
                 .anyMatch(str -> new File(str, "magisk").exists());
     }
 
@@ -318,6 +320,33 @@ public class ConfigManager {
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
             return new HashMap<>();
+        }
+    }
+
+    public static String getApi() {
+        try {
+            return LSPManagerServiceHolder.getService().getApi();
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
+            return e.toString();
+        }
+    }
+
+    public static List<String> getDenyListPackages() {
+        List<String> list = new ArrayList<>();
+        try {
+            list.addAll(LSPManagerServiceHolder.getService().getDenyListPackages());
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
+        }
+        return list;
+    }
+
+    public static void flashZip(String zipPath, ParcelFileDescriptor outputStream) {
+        try {
+            LSPManagerServiceHolder.getService().flashZip(zipPath, outputStream);
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
         }
     }
 }

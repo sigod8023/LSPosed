@@ -3,6 +3,8 @@ package org.lsposed.lspd.service;
 import static org.lsposed.lspd.service.ServiceManager.TAG;
 import static org.lsposed.lspd.service.ServiceManager.toGlobalNamespace;
 
+import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.os.ParcelFileDescriptor;
 import android.os.SELinux;
 import android.os.SharedMemory;
@@ -13,17 +15,20 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import org.lsposed.lspd.models.PreLoadedApk;
+import org.lsposed.lspd.util.InstallerVerifier;
 import org.lsposed.lspd.util.Utils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,28 +45,80 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipFile;
 
-class ConfigFileManager {
+public class ConfigFileManager {
     static final Path basePath = Paths.get("/data/adb/lspd");
-    static final File managerApkPath = basePath.resolve("manager.apk").toFile();
+    static final Path managerApkPath = basePath.resolve("manager.apk");
     private static final Path lockPath = basePath.resolve("lock");
     private static final Path configDirPath = basePath.resolve("config");
     static final File dbPath = configDirPath.resolve("modules_config.db").toFile();
+    static final File magiskDbPath = new File("/data/adb/magisk.db");
     private static final Path logDirPath = basePath.resolve("log");
     private static final Path oldLogDirPath = basePath.resolve("log.old");
     private static final DateTimeFormatter formatter =
             DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(Utils.getZoneId());
     @SuppressWarnings("FieldCanBeLocal")
     private static FileLocker locker = null;
+    private static Resources res = null;
+    private static ParcelFileDescriptor fd = null;
 
     static {
         try {
             Files.createDirectories(basePath);
             SELinux.setFileContext(basePath.toString(), "u:object_r:system_file:s0");
             Files.createDirectories(configDirPath);
-            Files.createDirectories(logDirPath);
+            createLogDirPath();
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
         }
+    }
+
+    private static void createLogDirPath() throws IOException {
+        if (!Files.isDirectory(logDirPath, LinkOption.NOFOLLOW_LINKS)) {
+            Files.deleteIfExists(logDirPath);
+        }
+        Files.createDirectories(logDirPath);
+    }
+
+    public static Resources getResources() {
+        loadRes();
+        return res;
+    }
+
+    private static void loadRes() {
+        if (res != null) return;
+        try {
+            var am = AssetManager.class.newInstance();
+            //noinspection JavaReflectionMemberAccess DiscouragedPrivateApi
+            Method addAssetPath = AssetManager.class.getDeclaredMethod("addAssetPath", String.class);
+            addAssetPath.setAccessible(true);
+            //noinspection ConstantConditions
+            if ((int) addAssetPath.invoke(am, managerApkPath.toString()) > 0)
+                //noinspection deprecation
+                res = new Resources(am, null, null);
+        } catch (Throwable e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        }
+    }
+
+    static void reloadConfiguration() {
+        loadRes();
+        try {
+            var conf = ActivityManagerService.getConfiguration();
+            if (conf != null)
+                //noinspection deprecation
+                res.updateConfiguration(conf, res.getDisplayMetrics());
+        } catch (Throwable e) {
+            Log.e(TAG, "reload configuration", e);
+        }
+    }
+
+    static ParcelFileDescriptor getManagerApk() throws IOException {
+        if (fd != null) return fd.dup();
+        if (!InstallerVerifier.verifyInstallerSignature(managerApkPath.toString())) return null;
+
+        SELinux.setFileContext(managerApkPath.toString(), "u:object_r:system_file:s0");
+        fd = ParcelFileDescriptor.open(managerApkPath.toFile(), ParcelFileDescriptor.MODE_READ_ONLY);
+        return fd.dup();
     }
 
     static void deleteFolderIfExists(Path target) throws IOException {
@@ -100,17 +157,22 @@ class ConfigFileManager {
     }
 
     private static String getNewLogFileName(String prefix) {
-        return prefix + "_" + formatter.format(Instant.now()) + ".txt";
+        return prefix + "_" + formatter.format(Instant.now()) + ".log";
     }
 
     static File getNewVerboseLogPath() throws IOException {
-        Files.createDirectories(logDirPath);
+        createLogDirPath();
         return logDirPath.resolve(getNewLogFileName("verbose")).toFile();
     }
 
     static File getNewModulesLogPath() throws IOException {
-        Files.createDirectories(logDirPath);
+        createLogDirPath();
         return logDirPath.resolve(getNewLogFileName("modules")).toFile();
+    }
+
+    static File getpropsLogPath() throws IOException {
+        createLogDirPath();
+        return logDirPath.resolve("props.log").toFile();
     }
 
     static Map<String, ParcelFileDescriptor> getLogs() {
@@ -189,41 +251,6 @@ class ConfigFileManager {
         file.moduleClassNames = moduleClassNames;
         file.moduleLibraryNames = moduleLibraryNames;
         return file;
-    }
-
-    private static String readText(Path file) throws IOException {
-        return new String(Files.readAllBytes(file)).trim();
-    }
-
-    // TODO: Remove after next release
-    static void migrateOldConfig(ConfigManager configManager) {
-        var miscPath = basePath.resolve("misc_path");
-        var enableResources = configDirPath.resolve("enable_resources");
-        var manager = configDirPath.resolve("manager");
-        var verboseLog = configDirPath.resolve("verbose_log");
-
-        if (Files.exists(miscPath)) {
-            try {
-                var s = "/data/misc/" + readText(miscPath);
-                configManager.updateModulePrefs("lspd", 0, "config", "misc_path", s);
-                Files.delete(miscPath);
-            } catch (IOException ignored) {
-            }
-        }
-        if (Files.exists(enableResources)) {
-            try {
-                var s = readText(enableResources);
-                var i = Integer.parseInt(s);
-                configManager.updateModulePrefs("lspd", 0, "config", "enable_resources", i == 1);
-                Files.delete(enableResources);
-            } catch (IOException ignored) {
-            }
-        }
-        try {
-            Files.deleteIfExists(manager);
-            Files.deleteIfExists(verboseLog);
-        } catch (IOException ignored) {
-        }
     }
 
     static boolean tryLock() {

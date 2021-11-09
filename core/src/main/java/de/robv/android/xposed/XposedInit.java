@@ -21,6 +21,7 @@
 package de.robv.android.xposed;
 
 import static org.lsposed.lspd.config.LSPApplicationServiceClient.serviceClient;
+import static org.lsposed.lspd.deopt.PrebuiltMethodsDeopter.deoptResourceMethods;
 import static de.robv.android.xposed.XposedBridge.hookAllMethods;
 import static de.robv.android.xposed.XposedBridge.sInitPackageResourcesCallbacks;
 import static de.robv.android.xposed.XposedBridge.sInitZygoteCallbacks;
@@ -51,8 +52,9 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.robv.android.xposed.callbacks.XC_InitPackageResources;
@@ -66,11 +68,14 @@ public final class XposedInit {
     public static boolean startsSystemServer = false;
 
     public static volatile boolean disableResources = false;
+    public static AtomicBoolean resourceInit = new AtomicBoolean(false);
 
     public static void hookResources() throws Throwable {
-        if (!serviceClient.isResourcesHookEnabled() || disableResources) {
+        if (disableResources || !resourceInit.compareAndSet(false, true)) {
             return;
         }
+
+        deoptResourceMethods();
 
         if (!ResourcesHook.initXResourcesNative()) {
             Log.e(TAG, "Cannot hook resources");
@@ -100,46 +105,61 @@ public final class XposedInit {
         final Class<?> classGTLR;
         final Class<?> classResKey;
         final ThreadLocal<Object> latestResKey = new ThreadLocal<>();
-        final String createResourceMethod;
+        final ArrayList<String> createResourceMethods = new ArrayList<>();
 
         classGTLR = android.app.ResourcesManager.class;
         classResKey = android.content.res.ResourcesKey.class;
-
-        if (Build.VERSION.SDK_INT < 30) {
-            createResourceMethod = "getOrCreateResources";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            createResourceMethods.add("createResources");
+            createResourceMethods.add("createResourcesForActivity");
+        } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
+            createResourceMethods.add("createResources");
         } else {
-            createResourceMethod = "createResources";
+            createResourceMethods.add("getOrCreateResources");
         }
 
-        hookAllMethods(classGTLR, createResourceMethod, new XC_MethodHook() {
+        final Class<?> classActivityRes = XposedHelpers.findClassIfExists("android.app.ResourcesManager$ActivityResource", classGTLR.getClassLoader());
+        var hooker = new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
                 // At least on OnePlus 5, the method has an additional parameter compared to AOSP.
-                final int activityTokenIdx = getParameterIndexByType(param.method, IBinder.class);
+                Object activityToken = null;
+                try {
+                    final int activityTokenIdx = getParameterIndexByType(param.method, IBinder.class);
+                    activityToken = param.args[activityTokenIdx];
+                } catch (NoSuchFieldError ignored) {
+                }
                 final int resKeyIdx = getParameterIndexByType(param.method, classResKey);
-
                 String resDir = (String) getObjectField(param.args[resKeyIdx], "mResDir");
                 XResources newRes = cloneToXResources(param, resDir);
                 if (newRes == null) {
                     return;
                 }
 
-                Object activityToken = param.args[activityTokenIdx];
                 //noinspection SynchronizeOnNonFinalField
                 synchronized (param.thisObject) {
-                    ArrayList<WeakReference<Resources>> resourceReferences;
+                    ArrayList<Object> resourceReferences;
                     if (activityToken != null) {
                         Object activityResources = callMethod(param.thisObject, "getOrCreateActivityResourcesStructLocked", activityToken);
                         //noinspection unchecked
-                        resourceReferences = (ArrayList<WeakReference<Resources>>) getObjectField(activityResources, "activityResources");
+                        resourceReferences = (ArrayList<Object>) getObjectField(activityResources, "activityResources");
                     } else {
                         //noinspection unchecked
-                        resourceReferences = (ArrayList<WeakReference<Resources>>) getObjectField(param.thisObject, "mResourceReferences");
+                        resourceReferences = (ArrayList<Object>) getObjectField(param.thisObject, "mResourceReferences");
                     }
-                    resourceReferences.add(new WeakReference<>(newRes));
+                    if (classActivityRes == null) {
+                        resourceReferences.add(new WeakReference<>(newRes));
+                    } else {
+                        var activityRes = XposedHelpers.newInstance(classActivityRes);
+                        XposedHelpers.setObjectField(activityRes, "resources", new WeakReference<>(newRes));
+                    }
                 }
             }
-        });
+        };
+
+        for (var createResourceMethod : createResourceMethods) {
+            hookAllMethods(classGTLR, createResourceMethod, hooker);
+        }
 
         findAndHookMethod(TypedArray.class, "obtain", Resources.class, int.class,
                 new XC_MethodHook() {
@@ -291,9 +311,6 @@ public final class XposedInit {
                 if (!IXposedMod.class.isAssignableFrom(moduleClass)) {
                     Log.e(TAG, "    This class doesn't implement any sub-interface of IXposedMod, skipping it");
                     continue;
-                } else if (disableResources && IXposedHookInitPackageResources.class.isAssignableFrom(moduleClass)) {
-                    Log.e(TAG, "    This class requires resource-related hooks (which are disabled), skipping it.");
-                    continue;
                 }
 
                 final Object moduleInstance = moduleClass.newInstance();
@@ -316,6 +333,7 @@ public final class XposedInit {
                 }
 
                 if (moduleInstance instanceof IXposedHookInitPackageResources) {
+                    hookResources();
                     XposedBridge.hookInitPackageResources(new IXposedHookInitPackageResources.Wrapper(
                             (IXposedHookInitPackageResources) moduleInstance, apk));
                     count++;
@@ -359,5 +377,5 @@ public final class XposedInit {
         return initModule(mcl, apk, file.moduleClassNames);
     }
 
-    public final static HashSet<String> loadedPackagesInProcess = new HashSet<>(1);
+    public final static Set<String> loadedPackagesInProcess = ConcurrentHashMap.newKeySet(1);
 }

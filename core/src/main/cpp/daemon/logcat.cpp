@@ -5,18 +5,12 @@
 #include <array>
 #include <cinttypes>
 #include "logcat.h"
-#include <string_view>
 #include <sys/system_properties.h>
 
 using namespace std::string_view_literals;
 
 constexpr size_t kMaxLogSize = 4 * 1024 * 1024;
-
-#ifndef NDEBUG
-    constexpr size_t kLogBufferSize = 1 * 1024 * 1024;
-#else
-    constexpr size_t kLogBufferSize = 256 * 1024;
-#endif
+constexpr size_t kLogBufferSize = 256 * 1024;
 
 constexpr std::array<char, ANDROID_LOG_SILENT + 1> kLogChar = {
         /*ANDROID_LOG_UNKNOWN*/'?',
@@ -50,6 +44,10 @@ public:
 private:
     inline void RefreshFd(bool is_verbose);
 
+    inline void Log(std::string_view str);
+
+    void OnCrash();
+
     void ProcessBuffer(struct log_msg *buf);
 
     static size_t PrintLogLine(const AndroidLogEntry &entry, FILE *out);
@@ -65,6 +63,8 @@ private:
     UniqueFile verbose_file_{};
     size_t verbose_file_part_ = 0;
     size_t verbose_print_count_ = 0;
+
+    pid_t my_pid_ = getpid();
 
     bool verbose_ = true;
 };
@@ -87,14 +87,16 @@ size_t Logcat::PrintLogLine(const AndroidLogEntry &entry, FILE *out) {
     }
     localtime_r(&now, &tm);
     strftime(time_buff.data(), time_buff.size(), "%Y-%m-%dT%H:%M:%S", &tm);
-    // implicitly convert to size_t and intentionally trigger overflow when failed
-    // to generate a new fd
-    return fprintf(out, "[ %s.%03ld %8d:%6d:%6d %c/%-15.*s ] %.*s\n",
-                   time_buff.data(),
-                   nsec / MS_PER_NSEC,
-                   entry.uid, entry.pid, entry.tid,
-                   kLogChar[entry.priority], static_cast<int>(entry.tagLen),
-                   entry.tag, static_cast<int>(message_len), message);
+    int len = fprintf(out, "[ %s.%03ld %8d:%6d:%6d %c/%-15.*s ] %.*s\n",
+                      time_buff.data(),
+                      nsec / MS_PER_NSEC,
+                      entry.uid, entry.pid, entry.tid,
+                      kLogChar[entry.priority], static_cast<int>(entry.tagLen),
+                      entry.tag, static_cast<int>(message_len), message);
+    fflush(out);
+    // trigger overflow when failed to generate a new fd
+    if (len <= 0) len = kMaxLogSize;
+    return static_cast<size_t>(len);
 }
 
 void Logcat::RefreshFd(bool is_verbose) {
@@ -103,16 +105,44 @@ void Logcat::RefreshFd(bool is_verbose) {
     if (is_verbose) {
         verbose_print_count_ = 0;
         fprintf(verbose_file_.get(), end, verbose_file_part_);
+        fflush(verbose_file_.get());
         verbose_file_ = UniqueFile(env_->CallIntMethod(thiz_, refresh_fd_method_, JNI_TRUE), "a");
         verbose_file_part_++;
         fprintf(verbose_file_.get(), start, verbose_file_part_);
+        fflush(verbose_file_.get());
     } else {
         modules_print_count_ = 0;
         fprintf(modules_file_.get(), end, modules_file_part_);
+        fflush(modules_file_.get());
         modules_file_ = UniqueFile(env_->CallIntMethod(thiz_, refresh_fd_method_, JNI_FALSE), "a");
         modules_file_part_++;
         fprintf(modules_file_.get(), start, modules_file_part_);
+        fflush(modules_file_.get());
     }
+}
+
+inline void Logcat::Log(std::string_view str) {
+    if (verbose_) fprintf(verbose_file_.get(), "%.*s", static_cast<int>(str.size()), str.data());
+    fprintf(modules_file_.get(), "%.*s", static_cast<int>(str.size()), str.data());
+}
+
+void Logcat::OnCrash() {
+    constexpr size_t max_restart_logd_wait = 1U << 10;
+    static size_t kLogdCrashCount = 0;
+    static size_t kLogdRestartWait = 1 << 3;
+    if (++kLogdCrashCount >= kLogdRestartWait) {
+        Log("\nLogd crashed too many times, trying manually start...\n");
+        __system_property_set("ctl.restart", "logd");
+        if (kLogdRestartWait < max_restart_logd_wait) {
+            kLogdRestartWait <<= 1;
+        } else {
+            kLogdCrashCount = 0;
+        }
+    } else {
+        Log("\nLogd maybe crashed, retrying in 1s...\n");
+    }
+
+    sleep(1);
 }
 
 void Logcat::ProcessBuffer(struct log_msg *buf) {
@@ -128,12 +158,12 @@ void Logcat::ProcessBuffer(struct log_msg *buf) {
         shortcut = true;
     }
     if (verbose_ && (shortcut || buf->id() == log_id::LOG_ID_CRASH ||
-                     tag == "Magisk"sv ||
-                     tag.starts_with("Riru"sv) ||
+                     entry.pid == my_pid_ || tag == "Magisk"sv ||
+                     tag.starts_with("Riru"sv) || tag.starts_with("zygisk"sv) ||
                      tag.starts_with("LSPosed"sv))) [[unlikely]] {
         verbose_print_count_ += PrintLogLine(entry, verbose_file_.get());
     }
-    if (entry.pid == getpid() && tag == "LSPosedLogcat"sv) [[unlikely]] {
+    if (entry.pid == my_pid_ && tag == "LSPosedLogcat"sv) [[unlikely]] {
         std::string_view msg(entry.message, entry.messageLen);
         if (msg == "!!start_verbose!!"sv) {
             verbose_ = true;
@@ -150,12 +180,9 @@ void Logcat::ProcessBuffer(struct log_msg *buf) {
 
 void Logcat::Run() {
     constexpr size_t tail_after_crash = 10U;
-    constexpr size_t max_restart_logd_wait = 1U << 10;
     size_t tail = 0;
     RefreshFd(true);
     RefreshFd(false);
-    size_t logd_crash_count = 0;
-    size_t logd_restart_wait = 1 << 3;
     while (true) {
         std::unique_ptr<logger_list, decltype(&android_logger_list_free)> logger_list{
                 android_logger_list_alloc(0, tail, 0), &android_logger_list_free};
@@ -164,7 +191,10 @@ void Logcat::Run() {
         for (log_id id:{LOG_ID_MAIN, LOG_ID_CRASH}) {
             auto *logger = android_logger_open(logger_list.get(), id);
             if (logger == nullptr) continue;
-            android_logger_set_log_size(logger, kLogBufferSize);
+            if (auto size = android_logger_get_log_size(logger);
+                    size >= 0 && static_cast<size_t>(size) < kLogBufferSize) {
+                android_logger_set_log_size(logger, kLogBufferSize);
+            }
         }
 
         struct log_msg msg{};
@@ -174,29 +204,11 @@ void Logcat::Run() {
 
             ProcessBuffer(&msg);
 
-            fflush(verbose_file_.get());
-            fflush(modules_file_.get());
-
             if (verbose_print_count_ >= kMaxLogSize) [[unlikely]] RefreshFd(true);
             if (modules_print_count_ >= kMaxLogSize) [[unlikely]] RefreshFd(false);
         }
-        logd_crash_count++;
-        if (logd_crash_count >= logd_restart_wait) {
-            fprintf(verbose_file_.get(),
-                    "\nLogd crashed too many times, trying manually start...\n");
-            fprintf(modules_file_.get(),
-                    "\nLogd crashed too many times, trying manually start...\n");
-            __system_property_set("ctl.restart", "logd");
-            if (logd_restart_wait < max_restart_logd_wait) {
-                logd_restart_wait <<= 1;
-            } else {
-                logd_crash_count = 0;
-            }
-        }
 
-        fprintf(verbose_file_.get(), "\nLogd maybe crashed, retrying in 1s...\n");
-        fprintf(modules_file_.get(), "\nLogd maybe crashed, retrying in 1s...\n");
-        sleep(1);
+        OnCrash();
     }
 }
 

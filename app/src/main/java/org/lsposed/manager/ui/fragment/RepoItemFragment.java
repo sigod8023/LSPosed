@@ -19,6 +19,7 @@
 
 package org.lsposed.manager.ui.fragment;
 
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Spannable;
@@ -31,6 +32,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -38,12 +40,11 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
@@ -66,17 +67,22 @@ import org.lsposed.manager.ui.widget.LinkifyTextView;
 import org.lsposed.manager.util.NavUtil;
 import org.lsposed.manager.util.chrome.CustomTabsURLSpan;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import okhttp3.Headers;
+import okhttp3.Request;
+import okhttp3.Response;
 import rikka.core.util.ResourceUtils;
 import rikka.recyclerview.RecyclerViewKt;
 import rikka.widget.borderview.BorderNestedScrollView;
 import rikka.widget.borderview.BorderRecyclerView;
-import rikka.widget.borderview.BorderView;
 
 public class RepoItemFragment extends BaseFragment implements RepoLoader.Listener {
     FragmentPagerBinding binding;
@@ -90,20 +96,9 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.Listene
         if (module == null) return binding.getRoot();
         String modulePackageName = module.getName();
         String moduleName = module.getDescription();
-        binding.getRoot().bringChildToFront(binding.appBar);
         setupToolbar(binding.toolbar, moduleName, R.menu.menu_repo_item);
         binding.toolbar.setSubtitle(modulePackageName);
         binding.viewPager.setAdapter(new PagerAdapter());
-        binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                BorderView borderView = binding.viewPager.findViewWithTag(position);
-
-                if (borderView != null) {
-                    binding.appBar.setRaised(!borderView.getBorderViewDelegate().isShowingTopBorder());
-                }
-            }
-        });
         int[] titles = new int[]{R.string.module_readme, R.string.module_releases, R.string.module_information};
         new TabLayoutMediator(binding.tabLayout, binding.viewPager, (tab, position) -> tab.setText(titles[position])).attach();
 
@@ -151,15 +146,47 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.Listene
             setting.setTextZoom(80);
             String body;
             if (ResourceUtils.isNightMode(getResources().getConfiguration())) {
-                body = RepoFragment.HTML_TEMPLATE_DARK.get().replace("@body@", text);
+                body = App.HTML_TEMPLATE_DARK.get().replace("@body@", text);
             } else {
-                body = RepoFragment.HTML_TEMPLATE.get().replace("@body@", text);
+                body = App.HTML_TEMPLATE.get().replace("@body@", text);
             }
             view.setWebViewClient(new WebViewClient() {
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                     NavUtil.startURL(requireActivity(), request.getUrl());
                     return true;
+                }
+
+                @Nullable
+                @Override
+                public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    if (!request.getUrl().getScheme().startsWith("http")) return null;
+                    var client = App.getOkHttpClient();
+                    var call = client.newCall(
+                            new Request.Builder()
+                                    .url(request.getUrl().toString())
+                                    .method(request.getMethod(), null)
+                                    .headers(Headers.of(request.getRequestHeaders()))
+                                    .build());
+                    try {
+                        Response reply = call.execute();
+                        var header = reply.header("content-type", "image/*;charset=utf-8");
+                        String[] contentTypes = new String[0];
+                        if (header != null) {
+                            contentTypes = header.split(";\\s*");
+                        }
+                        var mimeType = contentTypes.length > 0 ? contentTypes[0] : "image/*";
+                        var charset = contentTypes.length > 1 ? contentTypes[1].split("=\\s*")[1] : "utf-8";
+                        var body = reply.body();
+                        if (body == null) return null;
+                        return new WebResourceResponse(
+                                mimeType,
+                                charset,
+                                body.byteStream()
+                        );
+                    } catch (Throwable e) {
+                        return new WebResourceResponse("text/html", "utf-8", new ByteArrayInputStream(Log.getStackTraceString(e).getBytes(StandardCharsets.UTF_8)));
+                    }
                 }
             });
             view.loadDataWithBaseURL("https://github.com", body, "text/html",
@@ -295,13 +322,28 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.Listene
 
     private class ReleaseAdapter extends RecyclerView.Adapter<ReleaseAdapter.ViewHolder> {
         private List<Release> items;
+        private final Resources resources = App.getInstance().getResources();
 
         public ReleaseAdapter() {
             loadItems();
         }
 
         public void loadItems() {
-            this.items = module.getReleases();
+            var channels = resources.getStringArray(R.array.update_channel_values);
+            var channel = App.getPreferences().getString("update_channel", channels[0]);
+            var releases = module.getReleases();
+            if (channel.equals(channels[0])) {
+                this.items = releases.parallelStream().filter(t -> {
+                    if (t.getIsPrerelease()) return false;
+                    var name = t.getName().toLowerCase(Locale.ROOT);
+                    return !name.startsWith("snapshot") && !name.startsWith("nightly");
+                }).collect(Collectors.toList());
+            } else if (channel.equals(channels[1])) {
+                this.items = releases.parallelStream().filter(t -> {
+                    var name = t.getName().toLowerCase(Locale.ROOT);
+                    return !name.startsWith("snapshot") && !name.startsWith("nightly");
+                }).collect(Collectors.toList());
+            } else this.items = releases;
             notifyDataSetChanged();
         }
 
@@ -337,7 +379,7 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.Listene
                     holder.viewAssets.setOnClickListener(v -> {
                         ArrayList<String> names = new ArrayList<>();
                         assets.forEach(releaseAsset -> names.add(releaseAsset.getName()));
-                        new AlertDialog.Builder(requireActivity())
+                        new MaterialAlertDialogBuilder(requireActivity())
                                 .setItems(names.toArray(new String[0]), (dialog, which) -> NavUtil.startURL(requireActivity(), assets.get(which).getDownloadUrl()))
                                 .show();
                     });
@@ -404,8 +446,6 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.Listene
         public void onBindViewHolder(@NonNull PagerAdapter.ViewHolder holder, int position) {
             switch (position) {
                 case 0:
-                    holder.scrollView.getBorderViewDelegate().setBorderVisibilityChangedListener((top, oldTop, bottom, oldBottom) -> binding.appBar.setRaised(!top));
-                    holder.scrollView.setTag(position);
                     if (module != null)
                         renderGithubMarkdown(holder.webView, module.getReadmeHTML());
                     break;
@@ -416,12 +456,7 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.Listene
                     } else {
                         holder.recyclerView.setAdapter(new InformationAdapter(module));
                     }
-                    holder.recyclerView.setTag(position);
                     holder.recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
-                    holder.recyclerView.getBorderViewDelegate().setBorderVisibilityChangedListener((top, oldTop, bottom, oldBottom) -> binding.appBar.setRaised(!top));
-                    var insets = requireActivity().getWindow().getDecorView().getRootWindowInsets();
-                    if (insets != null)
-                        holder.recyclerView.onApplyWindowInsets(insets);
                     RecyclerViewKt.fixEdgeEffect(holder.recyclerView, false, true);
                     break;
             }

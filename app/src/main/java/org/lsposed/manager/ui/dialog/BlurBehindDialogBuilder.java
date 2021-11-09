@@ -24,20 +24,24 @@ import android.content.Context;
 import android.os.Build;
 import android.view.SurfaceControl;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.os.BuildCompat;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import java.lang.reflect.Method;
 
 @SuppressWarnings({"JavaReflectionMemberAccess", "ConstantConditions"})
-public class BlurBehindDialogBuilder extends AlertDialog.Builder {
+public class BlurBehindDialogBuilder extends MaterialAlertDialogBuilder {
     private static final boolean supportBlur = getSystemProperty("ro.surface_flinger.supports_background_blur", false) && !getSystemProperty("persist.sys.sf.disable_blurs", false);
 
     public BlurBehindDialogBuilder(@NonNull Context context) {
-        super(context);
+        super(context, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog_Centered);
     }
 
     @NonNull
@@ -49,14 +53,16 @@ public class BlurBehindDialogBuilder extends AlertDialog.Builder {
     }
 
     private void setBackgroundBlurRadius(AlertDialog dialog) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && supportBlur) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             ValueAnimator animator = ValueAnimator.ofInt(1, 150);
             animator.setInterpolator(new DecelerateInterpolator());
             animator.setDuration(150);
-            View view = dialog.getWindow().getDecorView();
+            Window window = dialog.getWindow();
+            View view = window.getDecorView();
             if (BuildCompat.isAtLeastS()) {
-                animator.addUpdateListener(animation -> dialog.getWindow().setBackgroundBlurRadius((Integer) animation.getAnimatedValue()));
-            } else {
+                window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+                animator.addUpdateListener(animation -> window.getAttributes().setBlurBehindRadius((Integer) animation.getAnimatedValue()));
+            } else if (supportBlur) {
                 try {
                     Object viewRootImpl = view.getClass().getMethod("getViewRootImpl").invoke(view);
                     if (viewRootImpl == null) {

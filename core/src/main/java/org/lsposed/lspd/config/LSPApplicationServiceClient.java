@@ -70,24 +70,6 @@ public class LSPApplicationServiceClient extends ApplicationServiceClient {
     }
 
     @Override
-    public boolean requestManagerBinder(String packageName, String path, List<IBinder> binder) {
-        try {
-            return service.requestManagerBinder(packageName, path, binder);
-        } catch (RemoteException | NullPointerException ignored) {
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isResourcesHookEnabled() {
-        try {
-            return service.isResourcesHookEnabled();
-        } catch (RemoteException | NullPointerException ignored) {
-        }
-        return false;
-    }
-
-    @Override
     public List<Module> getModulesList(String processName) {
         try {
             return service.getModulesList(processName);
@@ -110,7 +92,16 @@ public class LSPApplicationServiceClient extends ApplicationServiceClient {
     }
 
     @Override
-    public Bundle requestRemotePreference(String packageName, int userId, IBinder callback) throws RemoteException {
+    public Bundle requestRemotePreference(String packageName, int userId, IBinder callback) {
+        return null;
+    }
+
+    @Override
+    public ParcelFileDescriptor requestInjectedManagerBinder(List<IBinder> binder) {
+        try {
+            return service.requestInjectedManagerBinder(binder);
+        } catch (RemoteException | NullPointerException ignored) {
+        }
         return null;
     }
 

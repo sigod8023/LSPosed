@@ -81,11 +81,10 @@ public class ConfigManager {
     private final SQLiteDatabase db =
             SQLiteDatabase.openOrCreateDatabase(ConfigFileManager.dbPath, null);
 
-    private boolean resourceHook = false;
     private boolean verboseLog = true;
+    private boolean autoAddShortcut = true;
     private String miscPath = null;
 
-    private final String manager = BuildConfig.DEFAULT_MANAGER_PACKAGE_NAME;
     private int managerUid = -1;
 
     private final Handler cacheHandler;
@@ -97,6 +96,8 @@ public class ConfigManager {
     private long requestScopeCacheTime = 0;
 
     private boolean sepolicyLoaded = true;
+
+    private String api = "(???)";
 
     static class ProcessScope {
         final String processName;
@@ -203,14 +204,17 @@ public class ConfigManager {
     }
 
     private synchronized void updateConfig() {
-        ConfigFileManager.migrateOldConfig(this);
         Map<String, Object> config = getModulePrefs("lspd", 0, "config");
 
-        Object bool = config.get("enable_resources");
-        resourceHook = bool != null && (boolean) bool;
-
-        bool = config.get("enable_verbose_log");
+        Object bool = config.get("enable_verbose_log");
         verboseLog = bool == null || (boolean) bool;
+
+        bool = config.get("enable_auto_add_shortcut");
+        if (bool == null) {
+            updateModulePrefs("lspd", 0, "config", "enable_auto_add_shortcut", true);
+            bool = true;
+        }
+        autoAddShortcut = (boolean) bool;
 
         // Don't migrate to ConfigFileManager, as XSharedPreferences will be restored soon
         String string = (String) config.get("misc_path");
@@ -228,29 +232,25 @@ public class ConfigManager {
             Log.e(TAG, Log.getStackTraceString(e));
         }
 
-        updateManager();
+        updateManager(false);
     }
 
-    public synchronized void updateManager() {
+    public synchronized void updateManager(boolean uninstalled) {
+        if (uninstalled) {
+            managerUid = -1;
+            return;
+        }
         if (!PackageService.isAlive()) return;
         try {
-            PackageInfo info = PackageService.getPackageInfo(manager, 0, 0);
+            PackageInfo info = PackageService.getPackageInfo(BuildConfig.DEFAULT_MANAGER_PACKAGE_NAME, 0, 0);
             if (info != null) {
                 managerUid = info.applicationInfo.uid;
             } else {
-                Log.w(TAG, "manager is not installed");
+                managerUid = -1;
+                Log.i(TAG, "manager is not installed");
             }
         } catch (RemoteException ignored) {
         }
-    }
-
-    public void ensureManager() {
-        if (!PackageService.isAlive()) return;
-        new Thread(() -> {
-            if (PackageService.installManagerIfAbsent(manager, ConfigFileManager.managerApkPath)) {
-                updateManager();
-            }
-        }).start();
     }
 
     static ConfigManager getInstance() {
@@ -265,7 +265,7 @@ public class ConfigManager {
                 Log.d(TAG, "pm is ready, updating cache");
                 // must ensure cache is valid for later usage
                 instance.updateCaches(true);
-                instance.updateManager();
+                instance.updateManager(false);
             }
         }
         return instance;
@@ -425,7 +425,7 @@ public class ConfigManager {
             }
             if (PackageService.isAlive()) {
                 obsoleteModules.forEach(this::removeModuleWithoutCache);
-                obsoletePaths.forEach(this::updateModuleApkPath);
+                obsoletePaths.forEach((packageName, path) -> updateModuleApkPath(packageName, path, true));
             } else {
                 Log.w(TAG, "pm is dead while caching. invalidating...");
                 clearCache();
@@ -433,8 +433,8 @@ public class ConfigManager {
             }
         }
         Log.d(TAG, "cached modules");
-        for (String module : cachedModule.keySet()) {
-            Log.d(TAG, module);
+        for (var module : cachedModule.entrySet()) {
+            Log.d(TAG, module.getKey() + " " + module.getValue().apkPath);
         }
         cacheScopes();
     }
@@ -456,6 +456,9 @@ public class ConfigManager {
             final var obsoletePackages = new HashSet<Application>();
             final var obsoleteModules = new HashSet<Application>();
             final var moduleAvailability = new HashMap<Pair<String, Integer>, Boolean>();
+            final var cachedProcessScope = new HashMap<Pair<String, Integer>, List<ProcessScope>>();
+
+            final var denylist = new HashSet<>(getDenyListPackages());
             while (cursor.moveToNext()) {
                 Application app = new Application();
                 app.packageName = cursor.getString(appPkgNameIdx);
@@ -483,7 +486,15 @@ public class ConfigManager {
                 if (app.packageName.equals("android")) continue;
 
                 try {
-                    List<ProcessScope> processesScope = getAssociatedProcesses(app);
+                    List<ProcessScope> processesScope = cachedProcessScope.computeIfAbsent(new Pair<>(app.packageName, app.userId), (k) -> {
+                        try {
+                            if (denylist.contains(app.packageName))
+                                Log.w(TAG, app.packageName + " is on denylist. It may not take effect.");
+                            return getAssociatedProcesses(app);
+                        } catch (RemoteException e) {
+                            return Collections.emptyList();
+                        }
+                    });
                     if (processesScope.isEmpty()) {
                         obsoletePackages.add(app);
                         continue;
@@ -536,9 +547,7 @@ public class ConfigManager {
 
     // This is called when a new process created, use the cached result
     public boolean shouldSkipProcess(ProcessScope scope) {
-        return !cachedScope.containsKey(scope) &&
-                !isManager(scope.uid) &&
-                !shouldBlock(scope.processName);
+        return !cachedScope.containsKey(scope) && !isManager(scope.uid);
     }
 
     public boolean isUidHooked(int uid) {
@@ -588,7 +597,7 @@ public class ConfigManager {
         return apkPath.orElse(null);
     }
 
-    public boolean updateModuleApkPath(String packageName, String apkPath) {
+    public boolean updateModuleApkPath(String packageName, String apkPath, boolean force) {
         if (apkPath == null) return false;
         if (db.inTransaction()) {
             Log.w(TAG, "update module apk path should not be called inside transaction");
@@ -602,12 +611,14 @@ public class ConfigManager {
         int count = (int) db.insertWithOnConflict("modules", null, values, SQLiteDatabase.CONFLICT_IGNORE);
         if (count < 0) {
             var cached = cachedModule.getOrDefault(packageName, null);
-            if (cached == null || cached.apkPath == null || !cached.apkPath.equals(apkPath))
+            if (force || cached == null || cached.apkPath == null || !cached.apkPath.equals(apkPath))
                 count = db.updateWithOnConflict("modules", values, "module_pkg_name=?", new String[]{packageName}, SQLiteDatabase.CONFLICT_IGNORE);
             else
                 count = 0;
         }
-        if (count > 0) {
+        // force update is because cache is already update to date
+        // skip caching again
+        if (!force && count > 0) {
             // Called by oneway binder
             updateCaches(true);
             return true;
@@ -675,7 +686,10 @@ public class ConfigManager {
     public boolean removeModule(String packageName) {
         if (removeModuleWithoutCache(packageName)) {
             // called by oneway binder
-            updateCaches(true);
+            // Called only when the application is completely uninstalled
+            // If it's a module we need to return as soon as possible to broadcast to the manager
+            // for updating the module status
+            updateCaches(false);
             return true;
         }
         return false;
@@ -742,7 +756,7 @@ public class ConfigManager {
     }
 
     public boolean enableModule(String packageName, ApplicationInfo info) {
-        if (!updateModuleApkPath(packageName, getModuleApkPath(info))) return false;
+        if (!updateModuleApkPath(packageName, getModuleApkPath(info), false)) return false;
         int mid = getModuleId(packageName);
         if (mid == -1) return false;
         try {
@@ -769,12 +783,8 @@ public class ConfigManager {
         cacheScopes();
     }
 
-    public void setResourceHook(boolean resourceHook) {
-        updateModulePrefs("lspd", 0, "config", "enable_resources", resourceHook);
-        this.resourceHook = resourceHook;
-    }
-
     public void setVerboseLog(boolean on) {
+        if (BuildConfig.DEBUG) return;
         var logcatService = ServiceManager.getLogcatService();
         if (on) {
             logcatService.startVerbose();
@@ -785,12 +795,27 @@ public class ConfigManager {
         verboseLog = on;
     }
 
-    public boolean resourceHook() {
-        return resourceHook;
+    public boolean isAddShortcut() {
+        Log.d(TAG, "Auto add shortcut=" + autoAddShortcut);
+        return autoAddShortcut;
+    }
+
+    public void setAddShortcut(boolean on) {
+        updateModulePrefs("lspd", 0, "config", "enable_auto_add_shortcut", on);
+        this.autoAddShortcut = on;
     }
 
     public boolean verboseLog() {
-        return verboseLog;
+        return BuildConfig.DEBUG || verboseLog;
+    }
+
+    public ParcelFileDescriptor getManagerApk() {
+        try {
+            return ConfigFileManager.getManagerApk();
+        } catch (Throwable e) {
+            Log.e(TAG, "failed to open manager apk", e);
+            return null;
+        }
     }
 
     public ParcelFileDescriptor getModulesLog() {
@@ -820,16 +845,12 @@ public class ConfigManager {
         return true;
     }
 
-    public boolean isManager(String packageName) {
-        return packageName.equals(manager);
-    }
-
     public boolean isManager(int uid) {
         return uid == managerUid;
     }
 
-    public boolean shouldBlock(String packageName) {
-        return packageName.equals("io.github.lsposed.manager") || isManager(packageName);
+    public boolean isManagerInstalled() {
+        return managerUid != -1;
     }
 
     public String getPrefsPath(String fileName, int uid) {
@@ -890,11 +911,34 @@ public class ConfigManager {
         ConfigFileManager.deleteFolderIfExists(path);
     }
 
-    public String getManagerPackageName() {
-        return manager;
-    }
-
     public boolean isSepolicyLoaded() {
         return sepolicyLoaded;
+    }
+
+    public List<String> getDenyListPackages() {
+        List<String> result = new ArrayList<>();
+        if (!getApi().equals("Zygisk")) return result;
+        try (final SQLiteDatabase magiskDb =
+                     SQLiteDatabase.openDatabase(ConfigFileManager.magiskDbPath, new SQLiteDatabase.OpenParams.Builder().addOpenFlags(SQLiteDatabase.OPEN_READONLY).build())) {
+            try (Cursor cursor = magiskDb.query(true, "denylist", new String[]{"package_name"}, null, null, null, null, null, null, null)) {
+                if (cursor == null) return result;
+                int packageNameIdx = cursor.getColumnIndex("package_name");
+                while (cursor.moveToNext()) {
+                    result.add(cursor.getString(packageNameIdx));
+                }
+                return result;
+            }
+        } catch (Throwable e) {
+            Log.e(TAG, "get denylist", e);
+        }
+        return result;
+    }
+
+    public void setApi(String api) {
+        this.api = api;
+    }
+
+    public String getApi() {
+        return api;
     }
 }
