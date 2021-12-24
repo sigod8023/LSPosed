@@ -2,24 +2,18 @@ package org.lsposed.lspd.service;
 
 import android.annotation.SuppressLint;
 import android.os.ParcelFileDescriptor;
+import android.os.SELinux;
 import android.os.SystemProperties;
 import android.system.Os;
 import android.util.Log;
 
-import org.lsposed.lspd.BuildConfig;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
+import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 public class LogcatService implements Runnable {
     private static final String TAG = "LSPosedLogcat";
@@ -27,8 +21,8 @@ public class LogcatService implements Runnable {
             ParcelFileDescriptor.MODE_CREATE |
             ParcelFileDescriptor.MODE_TRUNCATE |
             ParcelFileDescriptor.MODE_APPEND;
-    private Path modulesLog = null;
-    private Path verboseLog = null;
+    private int modulesFd = -1;
+    private int verboseFd = -1;
     private Thread thread = null;
 
     @SuppressLint("UnsafeDynamicallyLoadedCode")
@@ -36,6 +30,29 @@ public class LogcatService implements Runnable {
         String libraryPath = System.getProperty("lsp.library.path");
         System.load(libraryPath + "/" + System.mapLibraryName("daemon"));
         ConfigFileManager.moveLogDir();
+
+        // Meizu devices set this prop and prevent debug logs from being recorded
+        if (SystemProperties.getInt("persist.sys.log_reject_level", 0) > 0) {
+            SystemProperties.set("persist.sys.log_reject_level", "0");
+        }
+
+        getprop();
+    }
+
+    private static void getprop() {
+        // multithreaded process can not change their context type,
+        // start a new process to set restricted context to filter privacy props
+        var cmd = "echo -n u:r:untrusted_app:s0 > /proc/thread-self/attr/current; getprop";
+        try {
+            SELinux.setFSCreateContext("u:object_r:app_data_file:s0");
+            new ProcessBuilder("sh", "-c", cmd)
+                    .redirectOutput(ConfigFileManager.getpropsLogPath())
+                    .start();
+        } catch (IOException e) {
+            Log.e(TAG, "getprop: ", e);
+        } finally {
+            SELinux.setFSCreateContext(null);
+        }
     }
 
     private native void runLogcat();
@@ -43,10 +60,6 @@ public class LogcatService implements Runnable {
     @Override
     public void run() {
         Log.i(TAG, "start running");
-        // Meizu devices set this prop and prevent debug logs from being recorded
-        if (BuildConfig.DEBUG && SystemProperties.getInt("persist.sys.log_reject_level", 0) > 0) {
-            SystemProperties.set("persist.sys.log_reject_level", "0");
-        }
         runLogcat();
         Log.i(TAG, "stopped");
     }
@@ -56,42 +69,46 @@ public class LogcatService implements Runnable {
         try {
             File log;
             if (isVerboseLog) {
-                checkFdFile(verboseLog);
+                checkFd(verboseFd);
                 log = ConfigFileManager.getNewVerboseLogPath();
             } else {
-                checkFdFile(modulesLog);
+                checkFd(modulesFd);
                 log = ConfigFileManager.getNewModulesLogPath();
             }
             Log.i(TAG, "New log file: " + log);
+            ConfigFileManager.chattr0(log.toPath().getParent());
             int fd = ParcelFileDescriptor.open(log, mode).detachFd();
-            var fdFile = Paths.get("/proc/self/fd", String.valueOf(fd));
-            if (isVerboseLog) verboseLog = fdFile;
-            else modulesLog = fdFile;
+            if (isVerboseLog) verboseFd = fd;
+            else modulesFd = fd;
             return fd;
         } catch (IOException e) {
-            if (isVerboseLog) verboseLog = null;
-            else modulesLog = null;
+            if (isVerboseLog) verboseFd = -1;
+            else modulesFd = -1;
             Log.w(TAG, "refreshFd", e);
             return -1;
         }
     }
 
-    private static void checkFdFile(Path fdFile) {
-        if (fdFile == null) return;
+    private static void checkFd(int fd) {
+        if (fd == -1) return;
         try {
-            var file = Files.readSymbolicLink(fdFile);
-            if (!Files.exists(file)) {
+            var jfd = new FileDescriptor();
+            //noinspection JavaReflectionMemberAccess DiscouragedPrivateApi
+            jfd.getClass().getDeclaredMethod("setInt$", int.class).invoke(jfd, fd);
+            var stat = Os.fstat(jfd);
+            if (stat.st_nlink == 0) {
+                var file = Files.readSymbolicLink(fdToPath(fd));
                 var parent = file.getParent();
                 if (!Files.isDirectory(parent, LinkOption.NOFOLLOW_LINKS)) {
-                    Files.deleteIfExists(parent);
+                    if (ConfigFileManager.chattr0(parent))
+                        Files.deleteIfExists(parent);
                 }
-                Files.createDirectories(parent);
                 var name = file.getFileName().toString();
                 var originName = name.substring(0, name.lastIndexOf(' '));
-                Files.copy(fdFile, parent.resolve(originName));
+                Files.copy(file, parent.resolve(originName));
             }
-        } catch (IOException e) {
-            Log.w(TAG, "checkFd " + fdFile, e);
+        } catch (Throwable e) {
+            Log.w(TAG, "checkFd " + fd, e);
         }
     }
 
@@ -109,42 +126,6 @@ public class LogcatService implements Runnable {
             start();
         });
         thread.start();
-        getprop();
-    }
-
-    private void getprop() {
-        try {
-            var sb = new StringBuilder();
-            var t = new Thread(() -> {
-                try (var magiskPathReader = new BufferedReader(new InputStreamReader(new ProcessBuilder("magisk", "--path").start().getInputStream()))) {
-                    var magiskPath = magiskPathReader.readLine();
-                    var sh = magiskPath + "/.magisk/busybox/sh";
-                    var pid = Os.getpid();
-                    var tid = Os.gettid();
-                    try (var exec = new FileOutputStream("/proc/" + pid + "/task/" + tid + "/attr/exec")) {
-                        var untrusted = "u:r:untrusted_app:s0";
-                        exec.write(untrusted.getBytes());
-                    }
-                    try (var rd = new BufferedReader(new InputStreamReader(new ProcessBuilder(sh, "-c", "getprop").start().getInputStream()))) {
-                        String line;
-                        while ((line = rd.readLine()) != null) {
-                            sb.append(line);
-                            sb.append(System.lineSeparator());
-                        }
-                    }
-                } catch (IOException e) {
-                    Log.e(TAG, "GetProp: " + e + ": " + Arrays.toString(e.getStackTrace()));
-                }
-            });
-            t.start();
-            t.join();
-            var propsLogPath = ConfigFileManager.getpropsLogPath();
-            try (var writer = new BufferedWriter(new FileWriter(propsLogPath))) {
-                writer.append(sb);
-            }
-        } catch (IOException | InterruptedException | NullPointerException e) {
-            Log.e(TAG, "GetProp: " + Arrays.toString(e.getStackTrace()));
-        }
     }
 
     public void startVerbose() {
@@ -163,24 +144,25 @@ public class LogcatService implements Runnable {
         }
     }
 
+    private static Path fdToPath(int fd) {
+        if (fd == -1) return null;
+        else return Paths.get("/proc/self/fd", String.valueOf(fd));
+    }
+
     public File getVerboseLog() {
-        return verboseLog.toFile();
+        var path = fdToPath(verboseFd);
+        return path == null ? null : path.toFile();
     }
 
     public File getModulesLog() {
-        return modulesLog.toFile();
+        var path = fdToPath(modulesFd);
+        return path == null ? null : path.toFile();
     }
 
     public void checkLogFile() {
-        try {
-            modulesLog.toRealPath();
-        } catch (IOException e) {
+        if (modulesFd == -1)
             refresh(false);
-        }
-        try {
-            verboseLog.toRealPath();
-        } catch (IOException e) {
+        if (verboseFd == -1)
             refresh(true);
-        }
     }
 }

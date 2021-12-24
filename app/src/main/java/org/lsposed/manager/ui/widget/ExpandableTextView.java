@@ -21,10 +21,14 @@ package org.lsposed.manager.ui.widget;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.text.Layout;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.TextPaint;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.transition.TransitionManager;
@@ -32,13 +36,14 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.material.textview.MaterialTextView;
+
 import org.lsposed.manager.R;
 
-public class ExpandableTextView extends TextView {
+public class ExpandableTextView extends MaterialTextView {
     private CharSequence text = null;
     private int nextLines = 0;
     private final int maxLines;
@@ -64,6 +69,11 @@ public class ExpandableTextView extends TextView {
                 TransitionManager.beginDelayedTransition((ViewGroup) getParent());
                 setMaxLines(nextLines);
                 ExpandableTextView.super.setText(text);
+            }
+
+            @Override
+            public void updateDrawState(@NonNull TextPaint ds) {
+                ds.setTypeface(Typeface.DEFAULT_BOLD);
             }
         };
         collapse.setSpan(span, 0, collapse.length(), 0);
@@ -125,6 +135,24 @@ public class ExpandableTextView extends TextView {
         }
 
         return false;
+    }
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("superState", super.onSaveInstanceState());
+        bundle.putInt("maxLines", getMaxLines());
+        return bundle;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        if (state instanceof Bundle) {
+            Bundle bundle = (Bundle) state;
+            setMaxLines(bundle.getInt("maxLines"));
+            state = bundle.getParcelable("superState");
+        }
+        super.onRestoreInstanceState(state);
     }
 
 }

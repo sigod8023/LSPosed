@@ -15,7 +15,6 @@
   ~ You should have received a copy of the GNU General Public License
   ~ along with LSPosed.  If not, see <https://www.gnu.org/licenses/>.
   ~
-  ~ Copyright (C) 2020 EdXposed Contributors
   ~ Copyright (C) 2021 LSPosed Contributors
   -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
@@ -57,7 +56,6 @@
     <string name="failed_to_create_shortcut">Falha ao criar atalho: %1$s</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Salvar</string>
-    <string name="nav_item_logs_lsp">Registros do LSPosed</string>
     <string name="nav_item_logs_module">Registros de Módulos</string>
     <string name="logs_save_failed2">Falha ao salvar:\n%s</string>
     <string name="menuClearLog">Limpar registro agora</string>
@@ -130,8 +128,6 @@
     <string name="module_release_no_more">Não há mais versões</string>
     <string name="repo_load_failed">Falha ao carregar o repositório de módulos: %s</string>
     <!-- CrashReportActivity -->
-    <string name="outdated_core">App do LSPosed é mais novo que framework. Atualize a Framework do LSPosed.</string>
-    <string name="outdated_manager">Framework do LSPosed é mais novo que o app. Atualize manualmente o aplicativo em /data/adb/lspd/manager.apk.</string>
     <string name="manager_crashed">Gerenciador travou</string>
     <!-- Colors -->
     <string name="color_pixel_blue">Pixel azul</string>

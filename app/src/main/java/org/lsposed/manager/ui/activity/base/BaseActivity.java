@@ -20,8 +20,12 @@
 
 package org.lsposed.manager.ui.activity.base;
 
+import android.app.ActivityManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.view.Window;
 
@@ -29,18 +33,22 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.color.DynamicColors;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.lsposed.manager.BuildConfig;
 import org.lsposed.manager.ConfigManager;
 import org.lsposed.manager.R;
+import org.lsposed.manager.ui.dialog.BlurBehindDialogBuilder;
+import org.lsposed.manager.ui.dialog.FlashDialogBuilder;
 import org.lsposed.manager.util.NavUtil;
 import org.lsposed.manager.util.ThemeUtil;
+import org.lsposed.manager.util.UpdateUtil;
 
 import rikka.core.util.ResourceUtils;
 import rikka.material.app.MaterialActivity;
 
 public class BaseActivity extends MaterialActivity {
+
+    private static Bitmap icon = null;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -51,17 +59,40 @@ public class BaseActivity extends MaterialActivity {
         // make sure the versions are consistent
         if (BuildConfig.DEBUG) return;
         if (!ConfigManager.isBinderAlive()) return;
-        var version = ConfigManager.getXposedVersionName();
-        if (BuildConfig.VERSION_NAME.equals(version)) return;
-        new MaterialAlertDialogBuilder(this)
-                .setMessage(BuildConfig.VERSION_NAME.compareTo(version) > 0 ?
-                        R.string.outdated_core : R.string.outdated_manager)
+        var version = ConfigManager.getXposedVersionCode();
+        if (BuildConfig.VERSION_CODE == version) return;
+        new BlurBehindDialogBuilder(this)
+                .setMessage(getString(R.string.version_mismatch, version, BuildConfig.VERSION_CODE))
                 .setPositiveButton(android.R.string.ok, (dialog, id) -> {
-                    NavUtil.startURL(this, getString(R.string.about_source));
-                    finish();
+                    if (UpdateUtil.canInstall()) {
+                        new FlashDialogBuilder(this, (d, i) -> finish()).show();
+                    } else {
+                        NavUtil.startURL(this, getString(R.string.about_source));
+                        finish();
+                    }
                 })
                 .setCancelable(false)
                 .show();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        for (var task : getSystemService(ActivityManager.class).getAppTasks()) {
+            task.setExcludeFromRecents(false);
+        }
+        if (icon == null) {
+            var drawable = getApplicationInfo().loadIcon(getPackageManager());
+            if (drawable instanceof BitmapDrawable) {
+                icon = ((BitmapDrawable) drawable).getBitmap();
+            } else {
+                icon = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+                final Canvas canvas = new Canvas(icon);
+                drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                drawable.draw(canvas);
+            }
+        }
+        setTaskDescription(new ActivityManager.TaskDescription(getTitle().toString(), icon));
     }
 
     @Override
@@ -92,6 +123,5 @@ public class BaseActivity extends MaterialActivity {
                 window.setNavigationBarColor(Color.TRANSPARENT);
             }
         });
-
     }
 }

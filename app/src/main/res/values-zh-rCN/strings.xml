@@ -15,7 +15,6 @@
   ~ You should have received a copy of the GNU General Public License
   ~ along with LSPosed.  If not, see <https://www.gnu.org/licenses/>.
   ~
-  ~ Copyright (C) 2020 EdXposed Contributors
   ~ Copyright (C) 2021 LSPosed Contributors
   -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
@@ -35,7 +34,7 @@
     <plurals name="module_repo_upgradable">
         <item quantity="other">%d 个模块可更新</item>
     </plurals>
-    <string name="about_view_source_code"><![CDATA[在 %1$s 查看源码<br/>加入我们的 %2$s 频道<br/>加入我们的 <b><a href="mqqapi://forward/url?src_type=web&style=default&plg_auth=1&version=1&url_prefix=aHR0cHM6Ly9xdW4ucXEuY29tL3F1bnByby9wYXNzY2hlY2svc2hhcmU/X3d2PTMmX3d3dj0xMjgmcGFzc0NvZGU9MTE0NTE0JnNlbmRlclVpbj0xMDAwMCZndWlsZElkPTg1NzU1NzIxNjM2MTI1NzM5Jmd1aWxkTmFtZT1MU1Bvc2VkJnNvdXJjZVR5cGU9MSZxcUdyb3VwVWluPTAmc2hhcmVUeXBlPTE=">QQ 频道</a></b>]]></string>
+    <string name="about_view_source_code"><![CDATA[在 %1$s 查看源码<br/>加入我们的 %2$s 频道<br/>加入我们的 <b><a href="mqqguild://guild/share?inviteCode=Xz9dJ&from=246610">QQ 频道</a></b>]]></string>
     <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
     <string name="install">安装</string>
     <string name="install_summary">点按安装 LSPosed</string>
@@ -68,7 +67,7 @@
     <string name="update_lsposed_msg">确认更新 LSPosed? 此设备将会在完成更新后自动重启。</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">保存</string>
-    <string name="nav_item_logs_lsp">LSPosed 日志</string>
+    <string name="nav_item_logs_verbose">详细日志</string>
     <string name="nav_item_logs_module">模块日志</string>
     <string name="logs_save_failed2">保存失败：\n%s</string>
     <string name="menuClearLog">立即清除日志</string>
@@ -80,6 +79,8 @@
     <string name="menuReload">重新加载</string>
     <string name="logs_clear_failed_2">日志清除失败</string>
     <string name="menu_enable_word_wrap">自动换行</string>
+    <string name="enabled_verbose_log">详细日志已启用</string>
+    <string name="disabled_verbose_log">详细日志已禁用</string>
     <!-- Notification -->
     <string name="module_is_not_activated_yet">Xposed 模块尚未激活</string>
     <string name="module_is_not_activated_yet_detailed">%s 已安装, 但尚未激活</string>
@@ -89,7 +90,6 @@
     <string name="xposed_module_updated_notification_content_system">%s 已更新，由于作用域包含系统框架，需要重启设备以应用更改</string>
     <!-- ModulesActivity -->
     <string name="module_empty_description">（未提供介绍）</string>
-    <string name="module_no_ui">该模块未提供用户界面</string>
     <string name="warning_xposed_min_version">此模块需要更新的 Xposed 版本（%d），因此无法激活</string>
     <string name="no_min_version_specified">该模块未指定所需的 Xposed 版本</string>
     <string name="warning_min_version_too_low">该模块针对 Xposed %1$d 版本构建，由于不兼容 %2$d 版本中的变更，现已被停用</string>
@@ -195,8 +195,7 @@
     <string name="module_release_no_more">没有更旧的版本</string>
     <string name="repo_load_failed">模块仓库加载失败：%s</string>
     <!-- CrashReportActivity -->
-    <string name="outdated_core">LSPosed 应用的版本高于框架。请更新 LSPosed 框架。</string>
-    <string name="outdated_manager">LSPosed 框架的版本高于应用。请从 /data/adb/lspd/manager.apk 更新 LSPosed 应用。</string>
+    <string name="version_mismatch">LSPosed 框架 (%1$d) 的版本与管理器 (%2$d)不匹配。请重新安装 LSPosed。</string>
     <string name="manager_crashed">应用出现未知错误</string>
     <string name="manager_crashed_info">反馈该问题到 </string>
     <string name="send_crash_info">发送崩溃信息</string>
@@ -223,4 +222,5 @@
     <string name="color_brown">棕色</string>
     <string name="color_grey">灰色</string>
     <string name="color_blue_grey">灰蓝</string>
+    <string name="feedback_or_suggestion">反馈或建议</string>
 </resources>
