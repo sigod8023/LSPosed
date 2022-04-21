@@ -15,20 +15,21 @@
  * along with LSPosed.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Copyright (C) 2020 EdXposed Contributors
- * Copyright (C) 2021 LSPosed Contributors
+ * Copyright (C) 2021 - 2022 LSPosed Contributors
  */
 
 package de.robv.android.xposed;
 
 import static de.robv.android.xposed.XposedHelpers.setObjectField;
 
+import android.app.ActivityThread;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.util.Log;
 
-import org.lsposed.lspd.BuildConfig;
+import org.lsposed.lspd.core.BuildConfig;
+import org.lsposed.lspd.nativebridge.HookBridge;
 import org.lsposed.lspd.nativebridge.ResourcesHook;
-import org.lsposed.lspd.yahfa.hooker.YahfaHooker;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Executable;
@@ -38,15 +39,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import de.robv.android.xposed.callbacks.XC_InitPackageResources;
-import de.robv.android.xposed.callbacks.XC_InitZygote;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
@@ -77,10 +74,8 @@ public final class XposedBridge {
     private static final Object[] EMPTY_ARRAY = new Object[0];
 
     // built-in handlers
-    private static final Map<Member, CopyOnWriteSortedSet<XC_MethodHook>> sHookedMethodCallbacks = new NoValuesHashMap<>();
-    public static final CopyOnWriteSortedSet<XC_LoadPackage> sLoadedPackageCallbacks = new CopyOnWriteSortedSet<>();
-    /*package*/ static final CopyOnWriteSortedSet<XC_InitPackageResources> sInitPackageResourcesCallbacks = new CopyOnWriteSortedSet<>();
-    /*package*/ static final CopyOnWriteSortedSet<XC_InitZygote> sInitZygoteCallbacks = new CopyOnWriteSortedSet<>();
+    public static final CopyOnWriteArraySet<XC_LoadPackage> sLoadedPackageCallbacks = new CopyOnWriteArraySet<>();
+    /*package*/ static final CopyOnWriteArraySet<XC_InitPackageResources> sInitPackageResourcesCallbacks = new CopyOnWriteArraySet<>();
 
     private XposedBridge() {
     }
@@ -96,17 +91,35 @@ public final class XposedBridge {
             Class<?> resClass = res.getClass();
             Class<?> taClass = TypedArray.class;
             try {
-                TypedArray ta = res.obtainTypedArray(res.getIdentifier(
-                        "preloaded_drawables", "array", "android"));
-                taClass = ta.getClass();
-                ta.recycle();
+                try {
+                    TypedArray ta = res.obtainTypedArray(res.getIdentifier(
+                            "preloaded_drawables", "array", "android"));
+                    taClass = ta.getClass();
+                    ta.recycle();
+                } catch (NullPointerException npe) {
+                    // For ZUI devices, the creation of TypedArray needs to check the configuration
+                    // from ActivityThread.currentActivityThread. However, we do not have a valid
+                    // ActivityThread for now and the call will throw an NPE. Luckily they check the
+                    // nullability of the result configuration. So we hereby set a dummy
+                    // ActivityThread to bypass such a situation.
+                    var fake = XposedHelpers.newInstance(ActivityThread.class);
+                    XposedHelpers.setStaticObjectField(ActivityThread.class, "sCurrentActivityThread", fake);
+                    try {
+                        TypedArray ta = res.obtainTypedArray(res.getIdentifier(
+                                "preloaded_drawables", "array", "android"));
+                        taClass = ta.getClass();
+                        ta.recycle();
+                    } finally {
+                        XposedHelpers.setStaticObjectField(ActivityThread.class, "sCurrentActivityThread", null);
+                    }
+                }
             } catch (Resources.NotFoundException nfe) {
                 XposedBridge.log(nfe);
             }
-            ResourcesHook.makeInheritable(resClass, resClass.getDeclaredConstructors());
-            ResourcesHook.makeInheritable(taClass, taClass.getDeclaredConstructors());
+            ResourcesHook.makeInheritable(resClass);
+            ResourcesHook.makeInheritable(taClass);
             ClassLoader myCL = XposedBridge.class.getClassLoader();
-            dummyClassLoader = ResourcesHook.buildDummyClassLoader(myCL.getParent(), resClass, taClass);
+            dummyClassLoader = ResourcesHook.buildDummyClassLoader(myCL.getParent(), resClass.getName(), taClass.getName());
             dummyClassLoader.loadClass("xposed.dummy.XResourcesSuperClass");
             dummyClassLoader.loadClass("xposed.dummy.XTypedArraySuperClass");
             setObjectField(myCL, "parent", dummyClassLoader);
@@ -152,17 +165,17 @@ public final class XposedBridge {
      * Deoptimize a method to avoid callee being inlined.
      *
      * @param deoptimizedMethod The method to deoptmize. Generally it should be a caller of a method
-     *                    that is inlined.
+     *                          that is inlined.
      */
     public static void deoptimizeMethod(Member deoptimizedMethod) {
         if (!(deoptimizedMethod instanceof Executable)) {
-            throw new IllegalArgumentException("Only methods and constructors can be deoptimized: " + deoptimizedMethod.toString());
+            throw new IllegalArgumentException("Only methods and constructors can be deoptimized: " + deoptimizedMethod);
         } else if (Modifier.isAbstract(deoptimizedMethod.getModifiers())) {
             throw new IllegalArgumentException("Cannot deoptimize abstract methods: " + deoptimizedMethod);
         } else if (Proxy.isProxyClass(deoptimizedMethod.getDeclaringClass())) {
             throw new IllegalArgumentException("Cannot deoptimize methods from proxy class: " + deoptimizedMethod);
         }
-        YahfaHooker.deoptMethodNative((Executable) deoptimizedMethod);
+        HookBridge.deoptimizeMethod((Executable) deoptimizedMethod);
     }
 
     /**
@@ -181,44 +194,20 @@ public final class XposedBridge {
      */
     public static XC_MethodHook.Unhook hookMethod(Member hookMethod, XC_MethodHook callback) {
         if (!(hookMethod instanceof Executable)) {
-            throw new IllegalArgumentException("Only methods and constructors can be hooked: " + hookMethod.toString());
-        }
-        // No check interface because there may be default methods
- 		/*else if (hookMethod.getDeclaringClass().isInterface()) {
-			throw new IllegalArgumentException("Cannot hook interfaces: " + hookMethod.toString());
-		}*/
-        else if (Modifier.isAbstract(hookMethod.getModifiers())) {
-            throw new IllegalArgumentException("Cannot hook abstract methods: " + hookMethod.toString());
+            throw new IllegalArgumentException("Only methods and constructors can be hooked: " + hookMethod);
+        } else if (Modifier.isAbstract(hookMethod.getModifiers())) {
+            throw new IllegalArgumentException("Cannot hook abstract methods: " + hookMethod);
         } else if (hookMethod.getDeclaringClass().getClassLoader() == XposedBridge.class.getClassLoader()) {
             throw new IllegalArgumentException("Do not allow hooking inner methods");
+        } else if (hookMethod.getDeclaringClass() == Method.class && hookMethod.getName().equals("invoke")) {
+            throw new IllegalArgumentException("Cannot hook Method.invoke");
         }
-
-        Executable targetMethod = (Executable) hookMethod;
 
         if (callback == null) {
             throw new IllegalArgumentException("callback should not be null!");
         }
 
-        boolean newMethod = false;
-        CopyOnWriteSortedSet<XC_MethodHook> callbacks;
-        synchronized (sHookedMethodCallbacks) {
-            callbacks = sHookedMethodCallbacks.get(targetMethod);
-            if (callbacks == null) {
-                callbacks = new CopyOnWriteSortedSet<>();
-                sHookedMethodCallbacks.put(targetMethod, callbacks);
-                newMethod = true;
-            }
-        }
-        callbacks.add(callback);
-
-        if (newMethod) {
-            AdditionalHookInfo additionalInfo = new AdditionalHookInfo(callbacks);
-            if (!YahfaHooker.shouldDelayHook(targetMethod)) {
-                YahfaHooker.hookMethod(targetMethod, additionalInfo);
-            } else {
-                PendingHooks.recordPendingMethod((Method) hookMethod, additionalInfo);
-            }
-        }
+        HookBridge.hookMethod((Executable) hookMethod, AdditionalHookInfo.class, callback.priority, callback);
 
         return callback.new Unhook(hookMethod);
     }
@@ -233,13 +222,9 @@ public final class XposedBridge {
      */
     @Deprecated
     public static void unhookMethod(Member hookMethod, XC_MethodHook callback) {
-        CopyOnWriteSortedSet<XC_MethodHook> callbacks;
-        synchronized (sHookedMethodCallbacks) {
-            callbacks = sHookedMethodCallbacks.get(hookMethod);
-            if (callbacks == null)
-                return;
+        if (hookMethod instanceof Executable) {
+            HookBridge.unhookMethod((Executable) hookMethod, callback);
         }
-        callbacks.remove(callback);
     }
 
     /**
@@ -291,12 +276,6 @@ public final class XposedBridge {
         }
     }
 
-    public static void clearLoadedPackages() {
-        synchronized (sLoadedPackageCallbacks) {
-            sLoadedPackageCallbacks.clear();
-        }
-    }
-
     /**
      * Adds a callback to be executed when the resources for an app are initialized.
      *
@@ -309,12 +288,6 @@ public final class XposedBridge {
     public static void hookInitPackageResources(XC_InitPackageResources callback) {
         synchronized (sInitPackageResourcesCallbacks) {
             sInitPackageResourcesCallbacks.add(callback);
-        }
-    }
-
-    public static void hookInitZygote(XC_InitZygote callback) {
-        synchronized (sInitZygoteCallbacks) {
-            sInitZygoteCallbacks.add(callback);
         }
     }
 
@@ -349,39 +322,7 @@ public final class XposedBridge {
             throw new IllegalArgumentException("method must be of type Method or Constructor");
         }
 
-        return YahfaHooker.invokeOriginalMethod((Executable) method, thisObject, args);
-    }
-
-    private static class NoValuesHashMap<K, V> extends HashMap<K, V> {
-        @Override
-        public Collection values() {
-            return Collections.EMPTY_LIST;
-        }
-
-        @Override
-        public void clear() {
-
-        }
-
-        @Override
-        public Set<K> keySet() {
-            return Collections.EMPTY_SET;
-        }
-
-        @Override
-        public Set<Entry<K, V>> entrySet() {
-            return Collections.EMPTY_SET;
-        }
-
-        @Override
-        public int size() {
-            return 0;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return true;
-        }
+        return HookBridge.invokeOriginalMethod((Executable) method, thisObject, args);
     }
 
     /**
@@ -429,16 +370,133 @@ public final class XposedBridge {
             return elements;
         }
 
+        public <T> T[] getSnapshot(T[] a) {
+            var snapshot = getSnapshot();
+            return (T[]) Arrays.copyOf(snapshot, snapshot.length, a.getClass());
+        }
+
         public synchronized void clear() {
             elements = EMPTY_ARRAY;
         }
     }
 
     public static class AdditionalHookInfo {
-        public final CopyOnWriteSortedSet<XC_MethodHook> callbacks;
+        private static final ClassCastException castException = new ClassCastException("Return value's type from hook callback does not match the hooked method");
+        private static final Method getCause;
+        private final Executable method;
+        private final Object[][] callbacks;
+        private final Class<?> returnType;
+        private final boolean isStatic;
 
-        private AdditionalHookInfo(CopyOnWriteSortedSet<XC_MethodHook> callbacks) {
+        static {
+            Method tmp;
+            try {
+                tmp = InvocationTargetException.class.getMethod("getCause");
+            } catch (Throwable e) {
+                tmp = null;
+            }
+            getCause = tmp;
+        }
+
+        private AdditionalHookInfo(Executable method, Object[][] callbacks) {
+            this.method = method;
+            isStatic = Modifier.isStatic(method.getModifiers());
+            if (method instanceof Method) {
+                returnType = ((Method) method).getReturnType();
+            } else {
+                returnType = null;
+            }
             this.callbacks = callbacks;
+        }
+
+        // This method is quite critical. We should try not to use system methods to avoid
+        // endless recursive
+        public Object callback(Object[] args) throws Throwable {
+            XC_MethodHook.MethodHookParam param = new XC_MethodHook.MethodHookParam();
+
+            param.method = method;
+
+            if (isStatic) {
+                param.thisObject = null;
+                param.args = args;
+            } else {
+                param.thisObject = args[0];
+                param.args = new Object[args.length - 1];
+                //noinspection ManualArrayCopy
+                for (int i = 0; i < args.length - 1; ++i) {
+                    param.args[i] = args[i + 1];
+                }
+            }
+
+            Object[] callbacksSnapshot = callbacks[0];
+            final int callbacksLength = callbacksSnapshot.length;
+            if (callbacksLength == 0) {
+                try {
+                    return HookBridge.invokeOriginalMethod(method, param.thisObject, param.args);
+                } catch (InvocationTargetException ite) {
+                    throw (Throwable) HookBridge.invokeOriginalMethod(getCause, ite);
+                }
+            }
+
+            // call "before method" callbacks
+            int beforeIdx = 0;
+            do {
+                try {
+                    ((XC_MethodHook) callbacksSnapshot[beforeIdx]).beforeHookedMethod(param);
+                } catch (Throwable t) {
+                    XposedBridge.log(t);
+
+                    // reset result (ignoring what the unexpectedly exiting callback did)
+                    param.setResult(null);
+                    param.returnEarly = false;
+                    continue;
+                }
+
+                if (param.returnEarly) {
+                    // skip remaining "before" callbacks and corresponding "after" callbacks
+                    beforeIdx++;
+                    break;
+                }
+            } while (++beforeIdx < callbacksLength);
+
+            // call original method if not requested otherwise
+            if (!param.returnEarly) {
+                try {
+                    param.setResult(HookBridge.invokeOriginalMethod(method, param.thisObject, param.args));
+                } catch (InvocationTargetException e) {
+                    param.setThrowable((Throwable) HookBridge.invokeOriginalMethod(getCause, e));
+                }
+            }
+
+            // call "after method" callbacks
+            int afterIdx = beforeIdx - 1;
+            do {
+                Object lastResult = param.getResult();
+                Throwable lastThrowable = param.getThrowable();
+
+                try {
+                    ((XC_MethodHook) callbacksSnapshot[afterIdx]).afterHookedMethod(param);
+                } catch (Throwable t) {
+                    XposedBridge.log(t);
+
+                    // reset to last result (ignoring what the unexpectedly exiting callback did)
+                    if (lastThrowable == null)
+                        param.setResult(lastResult);
+                    else
+                        param.setThrowable(lastThrowable);
+                }
+            } while (--afterIdx >= 0);
+
+            // return
+            if (param.hasThrowable())
+                throw param.getThrowable();
+            else {
+                var result = param.getResult();
+                if (returnType != null && !returnType.isPrimitive() && !HookBridge.instanceOf(result, returnType)) {
+                    throw castException;
+                }
+                return result;
+            }
         }
     }
 }

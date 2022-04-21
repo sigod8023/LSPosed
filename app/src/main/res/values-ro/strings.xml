@@ -20,6 +20,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
     <string name="info">Infromatii</string>
+    <string name="overview">Prezentare generală</string>
     <string name="Modules">Module</string>
     <plurals name="modules_enabled_count">
         <item quantity="one">%d modul activat</item>
@@ -28,6 +29,7 @@
     </plurals>
     <string name="Logs">Jurnale</string>
     <string name="Settings">Setari</string>
+    <string name="feedback_or_suggestion">Feedback sau sugestie</string>
     <string name="About">Despre</string>
     <string name="report_issue">Raporteaza o problema</string>
     <string name="module_repo">Depozit</string>
@@ -39,7 +41,7 @@
         <item quantity="other">%d module actualizabile.</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[Vezi codul sursă la%1$s<br/>Alătură-te canalului nostru %2$s]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">nul</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
     <string name="install">Instalare</string>
     <string name="install_summary">Atingeti pentru a instala LSPosed</string>
     <string name="not_installed">Nu este instalat</string>
@@ -62,15 +64,19 @@
     <string name="info_device">Dispozitiv</string>
     <string name="info_system_abi">Sistem ABI</string>
     <string name="info_api">Interfaţă de injectare</string>
+    <string name="info_dex2oat_wrapper">Optimizator Wrapper</string>
+    <string name="supported">Suportă</string>
+    <string name="unsupported_android_version">Neacceptat (versiune Android nesatisfăcută)</string>
+    <string name="unsupported_crashed">Neacceptat (prăbușit)</string>
     <string name="parasitic_recommend">Manager parazitar recomandat</string>
     <string name="parasitic_recommend_summary">LSPosed acceptă acum parazitizarea sistemului pentru a evita detectarea. Puteți dezinstala managerul în siguranță după crearea cu succes a unei comenzi rapide a managerului parazitar. În orice caz, puteți instala managerul înapoi din /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Crează scurtătură</string>
     <string name="never_show">Nu arăta niciodată</string>
-    <string name="failed_to_create_shortcut">Nu s-a reușit crearea scurtăturii: %1$s</string>
     <string name="update_lsposed">Actualizeaza LSPosed</string>
     <string name="update_lsposed_msg">Confirmaţi actualizarea LSPosed? Acest dispozitiv va reporni după finalizarea actualizării</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Salveaza</string>
+    <string name="nav_item_logs_verbose">Jurnalele Verbose</string>
     <string name="nav_item_logs_module">Jurnale module</string>
     <string name="logs_save_failed2">Salvarea a eșuat:\n%s</string>
     <string name="menuClearLog">Curăță jurnalul acum</string>
@@ -82,13 +88,8 @@
     <string name="menuReload">Reincarca</string>
     <string name="logs_clear_failed_2">Ștergerea jurnalului a eșuat</string>
     <string name="menu_enable_word_wrap">Înfășurarea cuvintelor</string>
-    <!-- Notification -->
-    <string name="module_is_not_activated_yet">Modulul Xposed nu este inca activat</string>
-    <string name="module_is_not_activated_yet_detailed">%s a fost instalat, dar inca nu este activat</string>
-    <string name="xposed_module_updated_notification_title">Modulul Xposed actualizat</string>
-    <string name="xposed_module_updated_notification_content">%s a fost actualizat, vă rugăm să forțați oprirea și repornirea aplicațiilor din domeniul său de aplicare</string>
-    <string name="xposed_module_updated_notification_title_system">Modulul Xposed a fost actualizat, este necesară repornirea sistemului</string>
-    <string name="xposed_module_updated_notification_content_system">%s a fost actualizat, deoarece domeniul de aplicare conține System Framework, necesară repornirea pentru a aplica modificările</string>
+    <string name="enabled_verbose_log">Jurnal Verbose activat</string>
+    <string name="disabled_verbose_log">Jurnal Verbose dezactivat</string>
     <!-- ModulesActivity -->
     <string name="module_empty_description">(nici o descriere furnizată)</string>
     <string name="warning_xposed_min_version">Acest modul necesită o versiune Xposed mai nouă (%d) și astfel nu poate fi activata</string>
@@ -128,10 +129,11 @@
     <string name="menu_show_modules">Module</string>
     <string name="menu_show_denylist">Denylist</string>
     <string name="failed_to_save_scope_list">Salvare eșuată listă de scop</string>
-    <string name="app_description">%1$s\nVersiunea %2$s</string>
+    <string name="app_version">Versiunea: %1$s</string>
     <string name="use_recommended">Recomandate</string>
     <string name="no_scope_selected_has_recommended">Nu ați selectat nicio aplicație. Selectați aplicațiile recomandate?</string>
     <string name="use_recommended_message">Selectaţi aplicaţiile recomandate?</string>
+    <string name="module_is_not_activated_yet">Modulul Xposed nu este inca activat</string>
     <string name="requested_by_module">Recomandate</string>
     <string name="update_available">Actualizare disponibilă: %1$s</string>
     <string name="module_disabled_no_selection">Modulul %s a fost dezactivat din moment ce nicio aplicație nu a fost selectată.</string>
@@ -162,6 +164,7 @@
     <string name="settings_restore_summery">Restaureaza lista de module si lista de scopuri.</string>
     <string name="settings_backup">Copie de rezerva</string>
     <string name="settings_backup_failed2">Copia de rezervă a eșuat:\n%s</string>
+    <string name="enable_documentui">Vă rugăm să activați DocumentUI</string>
     <string name="settings_restore">Restaurează</string>
     <string name="settings_restore_failed2">Restaurarea a eșuat:\n%s</string>
     <string name="group_network">Reţea</string>
@@ -177,11 +180,14 @@
     <string name="settings_translation">Participă în traducere</string>
     <string name="settings_translation_summary">Ajută-ne să traducem %s în limba ta</string>
     <string name="pref_title_enable_auto_add_shortcut">Adaugă automat o comandă rapidă</string>
+    <string name="create_shortcut_summary">Creați manual o comandă rapidă pentru managerul de paraziți</string>
     <string name="settings_enable_auto_add_shortcut_summary">Nicio comandă rapidă nouă nu va fi adăugată când este dezactivată în managerul non-parazit</string>
     <string name="settings_update_channel">Canal de actualizare</string>
     <string name="update_channel_stable">Stabil</string>
     <string name="update_channel_bate">Beta</string>
     <string name="update_channel_nightly">Construire nocturnă</string>
+    <string name="pref_title_restrict_classloader">Numai modulul classloader poate utiliza Xposed API</string>
+    <string name="pref_summary_restrict_classloader">Acest lucru poate distruge unele module, dar este în beneficiul securității (caracteristică experimentală)</string>
     <!-- Module Repo -->
     <string name="module_readme">Citește-mă</string>
     <string name="module_releases">Lansări</string>
@@ -195,14 +201,15 @@
     <string name="module_release_load_more">Arată versiunile mai vechi</string>
     <string name="module_release_no_more">Nu mai sunt lansări</string>
     <string name="repo_load_failed">Nu s-a putut încărca repo-ul modulului: %s</string>
+    <string name="sort_upgradable_first">Upgradabil mai întâi</string>
     <!-- CrashReportActivity -->
     <string name="version_mismatch">Versiunea LSPosed Framework (%1$d) nu se potrivește cu managerul (%2$d). Vă rugăm să reinstalați LSPosed.</string>
     <string name="manager_crashed">Manager prăbușit</string>
     <string name="manager_crashed_info">raportează acest lucru la </string>
     <string name="send_crash_info">Trimite informații despre prabusire</string>
     <string name="crash_info_copied">Informații prabusire copiate în clipboard</string>
+    <string name="info_copied">Copiat în clipboard</string>
     <!-- Colors -->
-    <string name="color_pixel_blue">Pixel albastru</string>
     <string name="color_sakura">Sakura</string>
     <string name="color_red">Roșu</string>
     <string name="color_pink">Roz</string>
@@ -221,6 +228,5 @@
     <string name="color_orange">Portocaliu</string>
     <string name="color_deep_orange">Portocaliu închis</string>
     <string name="color_brown">Maro</string>
-    <string name="color_grey">Gri</string>
     <string name="color_blue_grey">Albastru gri</string>
 </resources>

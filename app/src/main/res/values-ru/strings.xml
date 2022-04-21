@@ -20,6 +20,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
     <string name="info">Информация</string>
+    <string name="overview">LSPosed</string>
     <string name="Modules">Мои модули</string>
     <plurals name="modules_enabled_count">
         <item quantity="one">Включен %d модуль</item>
@@ -29,6 +30,7 @@
     </plurals>
     <string name="Logs">Логи</string>
     <string name="Settings">Настройки</string>
+    <string name="feedback_or_suggestion">Обратная связь</string>
     <string name="About">О приложении</string>
     <string name="report_issue">Сообщить о проблеме</string>
     <string name="module_repo">Репозиторий</string>
@@ -64,11 +66,14 @@
     <string name="info_device">Устройство</string>
     <string name="info_system_abi">Разрядность системы ABI</string>
     <string name="info_api">Способ внедрения</string>
+    <string name="info_dex2oat_wrapper">Оболочка оптимизатора</string>
+    <string name="supported">Поддерживается</string>
+    <string name="unsupported_android_version">Не поддерживается (версия Android не подходит)</string>
+    <string name="unsupported_crashed">Не поддерживается (Сбой)</string>
     <string name="parasitic_recommend">Скрытие приложения LSPosed</string>
-    <string name="parasitic_recommend_summary">Рекомендуется скрыть приложение LSPosed от различных обнаружений в системе. Для этого создайте ярлык и безопасно удалите само приложение LSPosed. В любой момент можно вернуть приложение установив его из /data/adb/lspd/manager.apk</string>
+    <string name="parasitic_recommend_summary">Рекомендуется скрыть приложение LSPosed от различных обнаружений в системе. Для этого создайте ярлык и безопасно удалите само приложение LSPosed. В любой момент можно вернуть приложение установив его из \"/data/adb/lspd/manager.apk\"</string>
     <string name="create_shortcut">Создать ярлык</string>
     <string name="never_show">Больше не показывать</string>
-    <string name="failed_to_create_shortcut">Не удалось создать ярлык: %1$s</string>
     <string name="update_lsposed">Обновление LSPosed</string>
     <string name="update_lsposed_msg">Вы точно хотите обновить LSPosed?\nУстройство перезагрузится после завершения обновления</string>
     <!-- LogsActivity -->
@@ -87,13 +92,6 @@
     <string name="menu_enable_word_wrap">Переносить текст</string>
     <string name="enabled_verbose_log">Подробные логи включены</string>
     <string name="disabled_verbose_log">Подробные логи выключены</string>
-    <!-- Notification -->
-    <string name="module_is_not_activated_yet">Модуль установлен</string>
-    <string name="module_is_not_activated_yet_detailed">Модуль %s установлен но не включен</string>
-    <string name="xposed_module_updated_notification_title">Модуль обновлен</string>
-    <string name="xposed_module_updated_notification_content">Модуль %s обновлен, остановите и запустите приложения выбранные для модуля</string>
-    <string name="xposed_module_updated_notification_title_system">Модуль обновлен, требуется перезагрузка</string>
-    <string name="xposed_module_updated_notification_content_system">Модуль %s обновлен, так как выбран системный фреймворк для модуля, требуется перезагрузка для применения изменений</string>
     <!-- ModulesActivity -->
     <string name="module_empty_description">(описание отсутствует)</string>
     <string name="warning_xposed_min_version">Этот модуль требует более новой версии LSPosed (%d) и не может быть включен</string>
@@ -125,7 +123,7 @@
     <string name="sort_by_install_time">По времени установки</string>
     <string name="sort_by_update_time">По времени обновления</string>
     <string name="sort_reverse">Обратная сортировка</string>
-    <string name="menu_show_system_apps">Системные приложения</string>
+    <string name="menu_show_system_apps">Системные</string>
     <string name="menu_sort">Сортировать</string>
     <string name="enable_module">Включить модуль</string>
     <string name="no_scope_selected">Вы не выбрали ни одного приложения. Продолжить?</string>
@@ -133,10 +131,11 @@
     <string name="menu_show_modules">Мои модули</string>
     <string name="menu_show_denylist">DenyList</string>
     <string name="failed_to_save_scope_list">Не удалось сохранить список выбранных приложений для модуля</string>
-    <string name="app_description">%1$s\nВерсия: %2$s</string>
+    <string name="app_version">Версия: %1$s</string>
     <string name="use_recommended">Рекомендуемые</string>
     <string name="no_scope_selected_has_recommended">Вы не выбрали ни одного приложения. Выбрать рекомендуемые приложения?</string>
     <string name="use_recommended_message">Выбрать рекомендуемые приложения?</string>
+    <string name="module_is_not_activated_yet">Модуль установлен</string>
     <string name="requested_by_module">Рекомендуемые</string>
     <string name="update_available">Доступно обновление: %1$s</string>
     <string name="module_disabled_no_selection">Модуль %s выключен, так как ни одно приложение не выбрано</string>
@@ -167,6 +166,7 @@
     <string name="settings_restore_summery">Восстановить список модулей и выбранных приложений для модулей</string>
     <string name="settings_backup">Создать</string>
     <string name="settings_backup_failed2">Не удалось сделать резервную копию:\n%s</string>
+    <string name="enable_documentui">Пожалуйста, включите DocumentUI</string>
     <string name="settings_restore">Восстановить</string>
     <string name="settings_restore_failed2">Не удалось восстановить:\n%s</string>
     <string name="group_network">Сеть</string>
@@ -181,12 +181,15 @@
     <string name="settings_translation_contributors">Автор перевода</string>
     <string name="settings_translation">Принять участие в переводе</string>
     <string name="settings_translation_summary">Помогите нам перевести %s на ваш язык</string>
-    <string name="pref_title_enable_auto_add_shortcut">Создание ярлыка</string>
-    <string name="settings_enable_auto_add_shortcut_summary">Новый ярлык не будет создаваться автоматически, если выключить этот переключатель</string>
+    <string name="pref_title_enable_auto_add_shortcut">Автоматически добавлять ярлык</string>
+    <string name="create_shortcut_summary">Вручную создать ярлык LSPosed</string>
+    <string name="settings_enable_auto_add_shortcut_summary">Новый ярлык LSPosed не будет добавляться автоматически, если выключить этот переключатель</string>
     <string name="settings_update_channel">Источник обновлений</string>
     <string name="update_channel_stable">Стабильные версии</string>
     <string name="update_channel_bate">Бета-версии</string>
     <string name="update_channel_nightly">Ночные версии</string>
+    <string name="pref_title_restrict_classloader">Только модуль classloader может использовать Xposed API</string>
+    <string name="pref_summary_restrict_classloader">Это может сломать некоторые модули, но повысит безопасность (экспериментальная функция)</string>
     <!-- Module Repo -->
     <string name="module_readme">Описание</string>
     <string name="module_releases">Версии</string>
@@ -200,14 +203,15 @@
     <string name="module_release_load_more">Показать старые версии</string>
     <string name="module_release_no_more">Больше нет других версий</string>
     <string name="repo_load_failed">Не удалось загрузить репозиторий модуля: %s</string>
+    <string name="sort_upgradable_first">Сначала обновляемые</string>
     <!-- CrashReportActivity -->
     <string name="version_mismatch">Версия LSPosed фреймворк (%1$d) не соответствует версии приложения (%2$d). Пожалуйста, переустановите LSPosed</string>
     <string name="manager_crashed">Сбой приложения LSPosed</string>
     <string name="manager_crashed_info">сообщить об этом </string>
     <string name="send_crash_info">Отправить информацию о сбое</string>
     <string name="crash_info_copied">Информация о сбое скопирована в буфер обмена</string>
+    <string name="info_copied">Скопировано в буфер обмена</string>
     <!-- Colors -->
-    <string name="color_pixel_blue">Небесно-голубой</string>
     <string name="color_sakura">Сакура</string>
     <string name="color_red">Красный</string>
     <string name="color_pink">Розовый</string>
@@ -226,7 +230,5 @@
     <string name="color_orange">Оранжевый</string>
     <string name="color_deep_orange">Насыщенный оранжевый</string>
     <string name="color_brown">Коричневый</string>
-    <string name="color_grey">Серый</string>
     <string name="color_blue_grey">Серо-голубой</string>
-    <string name="feedback_or_suggestion">Обратная связь</string>
 </resources>

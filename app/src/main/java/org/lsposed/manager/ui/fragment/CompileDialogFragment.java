@@ -63,6 +63,7 @@ public class CompileDialogFragment extends AppCompatDialogFragment {
         FragmentCompileDialogBinding binding = FragmentCompileDialogBinding.inflate(LayoutInflater.from(requireActivity()), null, false);
         final PackageManager pm = requireContext().getPackageManager();
         var builder = new BlurBehindDialogBuilder(requireActivity())
+                .setIcon(appInfo.loadIcon(pm))
                 .setTitle(appInfo.loadLabel(pm))
                 .setView(binding.getRoot());
 
@@ -100,18 +101,21 @@ public class CompileDialogFragment extends AppCompatDialogFragment {
                 if (result instanceof UnknownError) {
                     text = context.getString(R.string.compile_failed);
                 } else {
-                    text = context.getString(R.string.compile_failed_with_info) + result.toString();
+                    text = context.getString(R.string.compile_failed_with_info) + result;
                 }
             } else {
                 text = context.getString(R.string.compile_done);
             }
-            CompileDialogFragment fragment = outerRef.get();
-            if (fragment != null) {
-                fragment.dismissAllowingStateLoss();
-                var parent = fragment.getParentFragment();
-                if (parent instanceof BaseFragment) {
-                    ((BaseFragment) parent).showHint(text, true);
+            try {
+                CompileDialogFragment fragment = outerRef.get();
+                if (fragment != null) {
+                    fragment.dismissAllowingStateLoss();
+                    var parent = fragment.getParentFragment();
+                    if (parent instanceof BaseFragment) {
+                        ((BaseFragment) parent).showHint(text, true);
+                    }
                 }
+            } catch (IllegalStateException ignored) {
             }
         }
     }

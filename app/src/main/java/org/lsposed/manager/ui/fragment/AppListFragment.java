@@ -33,6 +33,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
+import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -45,8 +46,7 @@ import org.lsposed.manager.databinding.FragmentAppListBinding;
 import org.lsposed.manager.util.BackupUtils;
 import org.lsposed.manager.util.ModuleUtil;
 
-import java.util.Locale;
-
+import rikka.material.app.LocaleDelegate;
 import rikka.recyclerview.RecyclerViewKt;
 
 public class AppListFragment extends BaseFragment {
@@ -79,7 +79,7 @@ public class AppListFragment extends BaseFragment {
         binding.appBar.setLiftable(true);
         String title;
         if (module.userId != 0) {
-            title = String.format(Locale.ROOT, "%s (%d)", module.getAppName(), module.userId);
+            title = String.format(LocaleDelegate.getDefaultLocale(), "%s (%d)", module.getAppName(), module.userId);
         } else {
             title = module.getAppName();
         }
@@ -88,7 +88,10 @@ public class AppListFragment extends BaseFragment {
         scopeAdapter = new ScopeAdapter(this, module);
         scopeAdapter.setHasStableIds(true);
         scopeAdapter.registerAdapterDataObserver(observer);
-        binding.recyclerView.setAdapter(scopeAdapter);
+        var concatAdapter = new ConcatAdapter();
+        concatAdapter.addAdapter(scopeAdapter.switchAdaptor);
+        concatAdapter.addAdapter(scopeAdapter);
+        binding.recyclerView.setAdapter(concatAdapter);
         binding.recyclerView.setHasFixedSize(true);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
         binding.recyclerView.getBorderViewDelegate().setBorderVisibilityChangedListener((top, oldTop, bottom, oldBottom) -> binding.appBar.setLifted(!top));
@@ -121,7 +124,9 @@ public class AppListFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (module == null) {
-            getNavController().navigate(R.id.action_app_list_fragment_to_modules_fragment);
+            if (!safeNavigate(AppListFragmentDirections.actionAppListFragmentToModulesFragment())) {
+                safeNavigate(R.id.modules_nav);
+            }
         }
     }
 
@@ -133,10 +138,13 @@ public class AppListFragment extends BaseFragment {
         int moduleUserId = args.getModuleUserId();
 
         module = ModuleUtil.getInstance().getModule(modulePackageName, moduleUserId);
-        if (module == null)
-            getNavController().navigate(R.id.action_app_list_fragment_to_modules_fragment);
+        if (module == null) {
+            if (!safeNavigate(R.id.action_app_list_fragment_to_modules_fragment)) {
+                safeNavigate(R.id.modules_nav);
+            }
+        }
 
-        backupLauncher = registerForActivityResult(new ActivityResultContracts.CreateDocument(),
+        backupLauncher = registerForActivityResult(new ActivityResultContracts.CreateDocument("application/gzip"),
                 uri -> {
                     if (uri == null) return;
                     runAsync(() -> {
@@ -178,7 +186,7 @@ public class AppListFragment extends BaseFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        scopeAdapter.unregisterAdapterDataObserver(observer);
+        if (scopeAdapter != null) scopeAdapter.unregisterAdapterDataObserver(observer);
         binding = null;
     }
 
@@ -207,6 +215,7 @@ public class AppListFragment extends BaseFragment {
                 binding.recyclerView.setNestedScrollingEnabled(true);
             }
         });
+        searchView.findViewById(androidx.appcompat.R.id.search_edit_frame).setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT);
         scopeAdapter.onPrepareOptionsMenu(menu);
     }
 

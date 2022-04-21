@@ -112,7 +112,7 @@ public class ConfigManager {
                 app.packageName = application.packageName;
                 list.add(app);
             });
-            return LSPManagerServiceHolder.getService().setModuleScope(packageName, new ParceledListSlice<>(list));
+            return LSPManagerServiceHolder.getService().setModuleScope(packageName, list);
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
             return false;
@@ -126,7 +126,7 @@ public class ConfigManager {
             if (applications == null) {
                 return list;
             }
-            applications.getList().forEach(application -> {
+            applications.forEach(application -> {
                 if (!application.packageName.equals(packageName)) {
                     list.add(new ScopeAdapter.ApplicationWithEquals(application));
                 }
@@ -314,15 +314,6 @@ public class ConfigManager {
         }
     }
 
-    public static Map<String, ParcelFileDescriptor> getLogs() {
-        try {
-            return LSPManagerServiceHolder.getService().getLogs();
-        } catch (RemoteException e) {
-            Log.e(App.TAG, Log.getStackTraceString(e));
-            return new HashMap<>();
-        }
-    }
-
     public static String getApi() {
         try {
             return LSPManagerServiceHolder.getService().getApi();
@@ -347,6 +338,34 @@ public class ConfigManager {
             LSPManagerServiceHolder.getService().flashZip(zipPath, outputStream);
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
+        }
+    }
+
+    public static boolean isDexObfuscateEnabled() {
+        try {
+            return LSPManagerServiceHolder.getService().getDexObfuscate();
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
+            return false;
+        }
+    }
+
+    public static boolean setDexObfuscateEnabled(boolean enabled) {
+        try {
+            LSPManagerServiceHolder.getService().setDexObfuscate(enabled);
+            return true;
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
+            return false;
+        }
+    }
+
+    public static boolean dex2oatWrapperAlive() {
+        try {
+            return LSPManagerServiceHolder.getService().dex2oatWrapperAlive();
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
+            return false;
         }
     }
 }

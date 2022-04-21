@@ -19,6 +19,7 @@
 
 package org.lsposed.manager.ui.fragment;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -79,7 +80,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -87,6 +87,7 @@ import okhttp3.Headers;
 import okhttp3.Request;
 import okhttp3.Response;
 import rikka.core.util.ResourceUtils;
+import rikka.material.app.LocaleDelegate;
 import rikka.recyclerview.RecyclerViewKt;
 import rikka.widget.borderview.BorderView;
 
@@ -133,8 +134,11 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
 
         String modulePackageName = getArguments() == null ? null : getArguments().getString("modulePackageName");
         module = RepoLoader.getInstance().getOnlineModule(modulePackageName);
-        if (module == null)
-            getNavController().navigate(R.id.action_repo_item_fragment_to_repo_fragment);
+        if (module == null) {
+            if (!safeNavigate(R.id.action_repo_item_fragment_to_repo_fragment)) {
+                safeNavigate(R.id.repo_nav);
+            }
+        }
     }
 
     private void renderGithubMarkdown(WebView view, String text) {
@@ -152,10 +156,16 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
             setting.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
             setting.setTextZoom(80);
             String body;
-            if (ResourceUtils.isNightMode(getResources().getConfiguration())) {
-                body = App.HTML_TEMPLATE_DARK.get().replace("@body@", text);
+            String direction;
+            if (getResources().getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL) {
+                direction = "rtl";
             } else {
-                body = App.HTML_TEMPLATE.get().replace("@body@", text);
+                direction = "ltr";
+            }
+            if (ResourceUtils.isNightMode(getResources().getConfiguration())) {
+                body = App.HTML_TEMPLATE_DARK.get().replace("@dir@", direction).replace("@body@", text);
+            } else {
+                body = App.HTML_TEMPLATE.get().replace("@dir@", direction).replace("@body@", text);
             }
             view.setWebViewClient(new WebViewClient() {
                 @Override
@@ -222,7 +232,9 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
     @Override
     public void onModuleReleasesLoaded(OnlineModule module) {
         this.module = module;
-        runAsync(releaseAdapter::loadItems);
+        if (releaseAdapter != null) {
+            runAsync(releaseAdapter::loadItems);
+        }
         if (module.getReleases().size() == 1) {
             showHint(R.string.module_release_no_more, true);
         }
@@ -230,7 +242,9 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
 
     @Override
     public void onThrowable(Throwable t) {
-        runAsync(releaseAdapter::loadItems);
+        if (releaseAdapter != null) {
+            runAsync(releaseAdapter::loadItems);
+        }
         showHint(getString(R.string.repo_load_failed, t.getLocalizedMessage()), true);
     }
 
@@ -323,8 +337,11 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
         public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
             var args = getArguments();
             if (args == null) throw new IllegalArgumentException();
-            return new BlurBehindDialogBuilder(requireActivity())
-                    .setItems(args.getCharSequenceArray("names"), (dialog, which) -> NavUtil.startURL(requireActivity(), args.getStringArrayList("urls").get(which)))
+            return new BlurBehindDialogBuilder(requireActivity(), R.style.ThemeOverlay_MaterialAlertDialog_Centered_FullWidthButtons)
+                    .setTitle(R.string.module_release_view_assets)
+                    .setPositiveButton(android.R.string.cancel, null)
+                    .setItems(args.getCharSequenceArray("names"),
+                            (dialog, which) -> NavUtil.startURL(requireActivity(), args.getStringArrayList("urls").get(which)))
                     .create();
         }
 
@@ -346,23 +363,28 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
             runAsync(this::loadItems);
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         public void loadItems() {
             var channels = resources.getStringArray(R.array.update_channel_values);
             var channel = App.getPreferences().getString("update_channel", channels[0]);
             var releases = module.getReleases();
+            List<Release> tmpList;
             if (channel.equals(channels[0])) {
-                this.items = releases.parallelStream().filter(t -> {
+                tmpList = releases.parallelStream().filter(t -> {
                     if (t.getIsPrerelease()) return false;
-                    var name = t.getName().toLowerCase(Locale.ROOT);
+                    var name = t.getName().toLowerCase(LocaleDelegate.getDefaultLocale());
                     return !name.startsWith("snapshot") && !name.startsWith("nightly");
                 }).collect(Collectors.toList());
             } else if (channel.equals(channels[1])) {
-                this.items = releases.parallelStream().filter(t -> {
-                    var name = t.getName().toLowerCase(Locale.ROOT);
+                tmpList = releases.parallelStream().filter(t -> {
+                    var name = t.getName().toLowerCase(LocaleDelegate.getDefaultLocale());
                     return !name.startsWith("snapshot") && !name.startsWith("nightly");
                 }).collect(Collectors.toList());
-            } else this.items = releases;
-            runOnUiThread(this::notifyDataSetChanged);
+            } else tmpList = releases;
+            runOnUiThread(() -> {
+                items = tmpList;
+                notifyDataSetChanged();
+            });
         }
 
         @NonNull
@@ -545,7 +567,9 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
         public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
             var parent = getParentFragment();
             if (!(parent instanceof RepoItemFragment)) {
-                getNavController().navigate(R.id.action_repo_item_fragment_to_repo_fragment);
+                if (!safeNavigate(R.id.action_repo_item_fragment_to_repo_fragment)) {
+                    safeNavigate(R.id.repo_nav);
+                }
                 return null;
             }
             var repoItemFragment = (RepoItemFragment) parent;
@@ -574,7 +598,9 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
             var arguments = getArguments();
             var parent = getParentFragment();
             if (arguments == null || !(parent instanceof RepoItemFragment)) {
-                getNavController().navigate(R.id.action_repo_item_fragment_to_repo_fragment);
+                if (!safeNavigate(R.id.action_repo_item_fragment_to_repo_fragment)) {
+                    safeNavigate(R.id.repo_nav);
+                }
                 return null;
             }
             var repoItemFragment = (RepoItemFragment) parent;

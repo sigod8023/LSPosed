@@ -20,12 +20,14 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
     <string name="info">資訊</string>
+    <string name="overview">概觀</string>
     <string name="Modules">模組</string>
     <plurals name="modules_enabled_count">
         <item quantity="other">%d 個模組已啟用</item>
     </plurals>
     <string name="Logs">日誌</string>
     <string name="Settings">設定</string>
+    <string name="feedback_or_suggestion">回饋或建議</string>
     <string name="About">關於</string>
     <string name="report_issue">回報問題</string>
     <string name="module_repo">倉庫</string>
@@ -58,11 +60,14 @@
     <string name="info_device">裝置版本</string>
     <string name="info_system_abi">系統架構</string>
     <string name="info_api">注入介面</string>
+    <string name="info_dex2oat_wrapper">最佳化包裝</string>
+    <string name="supported">支援</string>
+    <string name="unsupported_android_version">不支援（Android 版本不符合要求）</string>
+    <string name="unsupported_crashed">不支援（已當機）</string>
     <string name="parasitic_recommend">推薦使用寄生管理器</string>
     <string name="parasitic_recommend_summary">LSPosed 現在支援系統寄生以繞過偵測。您可以在成功建立寄生管理器圖示後從系統設定中移除 LSPosed 管理器。您隨時可以從 /data/adb/lspd/manager.apk 重新安裝管理器。</string>
     <string name="create_shortcut">建立捷徑</string>
     <string name="never_show">不再顯示</string>
-    <string name="failed_to_create_shortcut">捷徑建立失敗：%1$s</string>
     <string name="update_lsposed">更新 LSPosed</string>
     <string name="update_lsposed_msg">確定要更新LSPosed嗎？更新完成後將會重啟裝置</string>
     <!-- LogsActivity -->
@@ -81,13 +86,6 @@
     <string name="menu_enable_word_wrap">自動換行</string>
     <string name="enabled_verbose_log">詳細日誌已啟用</string>
     <string name="disabled_verbose_log">詳細日誌已禁用</string>
-    <!-- Notification -->
-    <string name="module_is_not_activated_yet">Xposed 模組尚未啟用</string>
-    <string name="module_is_not_activated_yet_detailed">%s 已安裝，但尚未啟用</string>
-    <string name="xposed_module_updated_notification_title">Xposed 模組已更新</string>
-    <string name="xposed_module_updated_notification_content">%s 已更新，請強制停止並重新打開其作用域內的程式</string>
-    <string name="xposed_module_updated_notification_title_system">Xposed 模組已更新，需要重新啟動。</string>
-    <string name="xposed_module_updated_notification_content_system">%s 已更新，由於作用域包含系統框架，需要重新啟動以套用修改。</string>
     <!-- ModulesActivity -->
     <string name="module_empty_description">(未提供介紹)</string>
     <string name="warning_xposed_min_version">該模組需要更新版本的 Xposed(%d)，因此無法被啟用</string>
@@ -127,10 +125,11 @@
     <string name="menu_show_modules">模組</string>
     <string name="menu_show_denylist">Magisk 排除列表</string>
     <string name="failed_to_save_scope_list">作用域列表儲存失敗</string>
-    <string name="app_description">%1$s\n版本 %2$s</string>
+    <string name="app_version">版本：%1$s</string>
     <string name="use_recommended">推薦程式</string>
     <string name="no_scope_selected_has_recommended">未選擇任何程式，選擇推薦的程式？</string>
     <string name="use_recommended_message">選擇推薦的程式？</string>
+    <string name="module_is_not_activated_yet">Xposed 模組尚未啟用</string>
     <string name="requested_by_module">推薦啟用</string>
     <string name="update_available">可用更新：%1$s</string>
     <string name="module_disabled_no_selection">由於未選擇任何程式，模組 %s 已被停用。</string>
@@ -157,10 +156,11 @@
     <string name="pure_black_dark_theme_summary">當深色主題啟用時使用純黑色主題</string>
     <string name="settings_group_theme">主題</string>
     <string name="settings_backup_and_restore">備份與還原</string>
-    <string name="settings_backup_summery">備份模組列表和範圍清單</string>
-    <string name="settings_restore_summery">還原模組列表和範圍清單</string>
+    <string name="settings_backup_summery">備份模組列表和作用域清單</string>
+    <string name="settings_restore_summery">還原模組列表和作用域清單</string>
     <string name="settings_backup">備份</string>
     <string name="settings_backup_failed2">備份失敗：\n%s</string>
+    <string name="enable_documentui">請啟用 DocumentUI</string>
     <string name="settings_restore">還原</string>
     <string name="settings_restore_failed2">還原失敗：\n%s</string>
     <string name="group_network">網路</string>
@@ -176,11 +176,14 @@
     <string name="settings_translation">參與翻譯</string>
     <string name="settings_translation_summary">幫助我們翻譯 %s 到您的語言</string>
     <string name="pref_title_enable_auto_add_shortcut">自動新增捷徑</string>
+    <string name="create_shortcut_summary">手動建立寄生管理器捷徑</string>
     <string name="settings_enable_auto_add_shortcut_summary">在非寄生的管理器中停用後將不會新增捷徑</string>
     <string name="settings_update_channel">更新通道</string>
     <string name="update_channel_stable">穩定版</string>
     <string name="update_channel_bate">測試版</string>
     <string name="update_channel_nightly">每夜構建</string>
+    <string name="pref_title_restrict_classloader">只有模組 classloader 可以使用 Xposed API</string>
+    <string name="pref_summary_restrict_classloader">可能會破壞某些模組的功能，但有利於安全性（實驗性功能）</string>
     <!-- Module Repo -->
     <string name="module_readme">自述檔案</string>
     <string name="module_releases">版本</string>
@@ -194,14 +197,15 @@
     <string name="module_release_load_more">顯示較舊的版本</string>
     <string name="module_release_no_more">沒有更舊的版本</string>
     <string name="repo_load_failed">模組倉庫載入失敗：%s</string>
+    <string name="sort_upgradable_first">可更新的優先</string>
     <!-- CrashReportActivity -->
     <string name="version_mismatch">LSPosed框架版本 (%1$d) 與管理器 (%2$d) 不匹配，請重新安裝LSPosed。</string>
     <string name="manager_crashed">應用程式出現未知錯誤</string>
     <string name="manager_crashed_info">回報給 </string>
     <string name="send_crash_info">傳送錯誤日誌</string>
     <string name="crash_info_copied">錯誤日誌已複製到剪貼簿</string>
+    <string name="info_copied">已複製到剪貼簿</string>
     <!-- Colors -->
-    <string name="color_pixel_blue">Pixel 藍</string>
     <string name="color_sakura">櫻花</string>
     <string name="color_red">紅色</string>
     <string name="color_pink">粉色</string>
@@ -220,7 +224,5 @@
     <string name="color_orange">橙色</string>
     <string name="color_deep_orange">深橙</string>
     <string name="color_brown">棕色</string>
-    <string name="color_grey">灰色</string>
     <string name="color_blue_grey">藍灰</string>
-    <string name="feedback_or_suggestion">回饋或建議</string>
 </resources>

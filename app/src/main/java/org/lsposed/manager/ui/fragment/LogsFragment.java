@@ -20,6 +20,7 @@
 package org.lsposed.manager.ui.fragment;
 
 import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -50,24 +51,20 @@ import org.lsposed.manager.R;
 import org.lsposed.manager.databinding.FragmentPagerBinding;
 import org.lsposed.manager.databinding.ItemLogTextviewBinding;
 import org.lsposed.manager.databinding.SwiperefreshRecyclerviewBinding;
+import org.lsposed.manager.receivers.LSPManagerServiceHolder;
 import org.lsposed.manager.ui.widget.EmptyStateRecyclerView;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.zip.Deflater;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
-import rikka.core.os.FileUtils;
+import rikka.material.app.LocaleDelegate;
 import rikka.recyclerview.RecyclerViewKt;
 
 public class LogsFragment extends BaseFragment {
@@ -83,19 +80,18 @@ public class LogsFragment extends BaseFragment {
     private OptionsItemSelectListener optionsItemSelectListener;
 
     private final ActivityResultLauncher<String> saveLogsLauncher = registerForActivityResult(
-            new ActivityResultContracts.CreateDocument(),
+            new ActivityResultContracts.CreateDocument("application/zip"),
             uri -> {
                 if (uri == null) return;
                 runAsync(() -> {
                     var context = requireContext();
                     var contentResolver = context.getContentResolver();
-                    try (var os = new ZipOutputStream(contentResolver.openOutputStream(uri))) {
-                        os.setLevel(Deflater.BEST_COMPRESSION);
-                        zipLogs(os);
-                        os.finish();
-                    } catch (IOException e) {
+                    try (var zipFd = contentResolver.openFileDescriptor(uri, "wt")) {
+                        LSPManagerServiceHolder.getService().getLogs(zipFd);
+                    } catch (Throwable e) {
                         var text = context.getString(R.string.logs_save_failed2, e.getMessage());
                         showHint(text, false);
+                        Log.w(App.TAG, "save log", e);
                     }
                 });
             });
@@ -106,6 +102,7 @@ public class LogsFragment extends BaseFragment {
         binding = FragmentPagerBinding.inflate(inflater, container, false);
         binding.appBar.setLiftable(true);
         setupToolbar(binding.toolbar, binding.clickView, R.string.Logs, R.menu.menu_logs);
+        binding.toolbar.setNavigationIcon(null);
         binding.toolbar.setSubtitle(ConfigManager.isVerboseLogEnabled() ? R.string.enabled_verbose_log : R.string.disabled_verbose_log);
         adapter = new LogPageAdapter(this);
         binding.viewPager.setAdapter(adapter);
@@ -165,30 +162,11 @@ public class LogsFragment extends BaseFragment {
 
     private void save() {
         LocalDateTime now = LocalDateTime.now();
-        String filename = String.format(Locale.ROOT, "LSPosed_%s.zip", now.toString());
-        saveLogsLauncher.launch(filename);
-    }
-
-    private static void zipLogs(ZipOutputStream os) {
-        var logs = ConfigManager.getLogs();
-        logs.forEach((name, fd) -> {
-            try (var is = new FileInputStream(fd.getFileDescriptor())) {
-                os.putNextEntry(new ZipEntry(name));
-                FileUtils.copy(is, os);
-                os.closeEntry();
-            } catch (IOException e) {
-                Log.w(App.TAG, name, e);
-            }
-        });
-
-        var now = LocalDateTime.now();
-        var name = "app_" + now.toString() + ".log";
-        try (var is = new ProcessBuilder("logcat", "-d").start().getInputStream()) {
-            os.putNextEntry(new ZipEntry(name));
-            FileUtils.copy(is, os);
-            os.closeEntry();
-        } catch (IOException e) {
-            Log.w(App.TAG, name, e);
+        String filename = String.format(LocaleDelegate.getDefaultLocale(), "LSPosed_%s.zip", now.toString());
+        try {
+            saveLogsLauncher.launch(filename);
+        } catch (ActivityNotFoundException e) {
+            showHint(R.string.enable_documentui, true);
         }
     }
 
@@ -225,22 +203,26 @@ public class LogsFragment extends BaseFragment {
                 return log.size();
             }
 
-            void refresh() {
-                isLoaded = true;
-                runOnUiThread(this::notifyDataSetChanged);
+            @SuppressLint("NotifyDataSetChanged")
+            void refresh(List<CharSequence> log) {
+                runOnUiThread(() -> {
+                    isLoaded = true;
+                    this.log = log;
+                    notifyDataSetChanged();
+                });
             }
 
             void fullRefresh() {
                 runAsync(() -> {
                     isLoaded = false;
+                    List<CharSequence> tmp;
                     try (var parcelFileDescriptor = ConfigManager.getLog(verbose);
                          var br = new BufferedReader(new InputStreamReader(new FileInputStream(parcelFileDescriptor != null ? parcelFileDescriptor.getFileDescriptor() : null)))) {
-                        log = br.lines().parallel().collect(Collectors.toList());
+                        tmp = br.lines().parallel().collect(Collectors.toList());
                     } catch (Throwable e) {
-                        log = Arrays.asList(Log.getStackTraceString(e).split("\n"));
-                    } finally {
-                        refresh();
+                        tmp = Arrays.asList(Log.getStackTraceString(e).split("\n"));
                     }
+                    refresh(tmp);
                 });
             }
 
@@ -274,6 +256,8 @@ public class LogsFragment extends BaseFragment {
             binding.recyclerView.setAdapter(adaptor);
             layoutManager = new LinearLayoutManager(requireActivity());
             binding.recyclerView.setLayoutManager(layoutManager);
+            // ltr even for rtl languages because of log format
+            binding.recyclerView.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
             binding.swipeRefreshLayout.setProgressViewEndTarget(true, binding.swipeRefreshLayout.getProgressViewEndOffset());
             RecyclerViewKt.fixEdgeEffect(binding.recyclerView, false, true);
             binding.swipeRefreshLayout.setOnRefreshListener(adaptor::fullRefresh);
@@ -349,7 +333,6 @@ public class LogsFragment extends BaseFragment {
         @Override
         public void onResume() {
             super.onResume();
-            adaptor.refresh();
             attachListeners();
         }
 
@@ -377,6 +360,7 @@ public class LogsFragment extends BaseFragment {
             HorizontalScrollView horizontalScrollView = new HorizontalScrollView(getContext());
             horizontalScrollView.setFillViewport(true);
             horizontalScrollView.setHorizontalScrollBarEnabled(false);
+            horizontalScrollView.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
             binding.swipeRefreshLayout.addView(horizontalScrollView);
             horizontalScrollView.addView(binding.recyclerView);
             binding.recyclerView.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -389,7 +373,14 @@ public class LogsFragment extends BaseFragment {
                 @Override
                 public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
                     super.onBindViewHolder(holder, position);
-                    holder.item.measure(0, 0);
+                    var view = holder.item;
+                    view.measure(0, 0);
+                    int desiredWidth = view.getMeasuredWidth();
+                    ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+                    layoutParams.width = desiredWidth;
+                    if (binding.recyclerView.getWidth() < desiredWidth) {
+                        binding.recyclerView.requestLayout();
+                    }
                 }
             };
         }

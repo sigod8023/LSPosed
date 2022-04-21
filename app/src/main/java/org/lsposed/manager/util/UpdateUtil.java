@@ -69,12 +69,13 @@ public class UpdateUtil {
                 .putInt("latest_version", Integer.parseInt(splitName[2]))
                 .putLong("latest_check", Instant.now().getEpochSecond())
                 .putString("release_notes", releaseNotes)
+                .putString("zip_file", null)
                 .putBoolean("checked", true)
                 .apply();
         var updatedAt = Instant.parse(assets.get("updated_at").getAsString());
         var downloadUrl = assets.get("browser_download_url").getAsString();
-        var nowZipTime = pref.getLong("zip_time", 0);
-        if (updatedAt.isAfter(Instant.ofEpochSecond(nowZipTime))) {
+        var zipTime = pref.getLong("zip_time", 0);
+        if (!updatedAt.equals(Instant.ofEpochSecond(zipTime))) {
             var zip = downloadNewZipSync(downloadUrl, name);
             var size = assets.get("size").getAsLong();
             if (zip != null && zip.length() == size) {

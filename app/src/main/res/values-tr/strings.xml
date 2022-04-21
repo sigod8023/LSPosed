@@ -20,6 +20,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
     <string name="info">Bilgi</string>
+    <string name="overview">Genel bakış</string>
     <string name="Modules">Modüller</string>
     <plurals name="modules_enabled_count">
         <item quantity="one">%d modül etkin</item>
@@ -27,9 +28,10 @@
     </plurals>
     <string name="Logs">Günlükler</string>
     <string name="Settings">Ayarlar</string>
+    <string name="feedback_or_suggestion">Geri bildirim veya öneri</string>
     <string name="About">Hakkında</string>
     <string name="report_issue">Hata raporla</string>
-    <string name="module_repo">Repo</string>
+    <string name="module_repo">Modül deposu</string>
     <string name="module_repo_loading">Yükleniyor…</string>
     <string name="module_repo_up_to_date">Bütün modüller güncel</string>
     <plurals name="module_repo_upgradable">
@@ -37,7 +39,7 @@
         <item quantity="other">%d modül güncellenebilir</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[%1$s adresindeki kaynak kodunu görüntüle<br/>%2$s kanalımıza katılın]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">Bedircan AYAYDIN, Furkan KARCIOĞLU</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">Bedircan AYAYDIN, Furkan KARCIOĞLU, Ahmet AÇIKGÖZ</string>
     <string name="install">Yükle</string>
     <string name="install_summary">LSPosed\'i yüklemek için dokunun</string>
     <string name="not_installed">Yüklenmedi</string>
@@ -60,15 +62,19 @@
     <string name="info_device">Cihaz</string>
     <string name="info_system_abi">Sistem ABI\'si</string>
     <string name="info_api">Enjeksiyon Arayüzü</string>
+    <string name="info_dex2oat_wrapper">Optimize Edici Sarıcı</string>
+    <string name="supported">Desteklenen</string>
+    <string name="unsupported_android_version">Desteklenmiyor (Android sürümü tatmin edici değil)</string>
+    <string name="unsupported_crashed">Desteklenmiyor (Çöktü)</string>
     <string name="parasitic_recommend">Parazit Yönetici Önerilir</string>
     <string name="parasitic_recommend_summary">LSPosed şu an sisteme parazit olarak yerleşip denetlemeleri önlemeyi destekliyor. Parazit yönetici kısayolunu ana ekrana ekledikten sonra güvenle bu yöneticiyi kaldırabilirsiniz. Eğer eski yöneticiyi geri isterseniz /data/adb/lspd/manager.apk konumunda bulabilirsiniz.</string>
     <string name="create_shortcut">Kısayol oluştur</string>
     <string name="never_show">Asla gösterme</string>
-    <string name="failed_to_create_shortcut">Kısayol oluştururken bir hata oluştu: %1$s</string>
     <string name="update_lsposed">LSPosed\'ı güncelle</string>
     <string name="update_lsposed_msg">LSPosed\'ı güncellemek istediğinize emin misiniz? Bu cihaz güncelleme tamamlandıktan sonra yeniden başlatılacak</string>
     <!-- LogsActivity -->
-    <string name="menuSaveToSd">Kaydetme</string>
+    <string name="menuSaveToSd">Kaydet</string>
+    <string name="nav_item_logs_verbose">Ayrıntılı Günlükler</string>
     <string name="nav_item_logs_module">Modül Günlükleri</string>
     <string name="logs_save_failed2">Kaydedilemedi:\n%s</string>
     <string name="menuClearLog">Günlüğü şimdi temizle</string>
@@ -80,13 +86,8 @@
     <string name="menuReload">Tekrar yükle</string>
     <string name="logs_clear_failed_2">Günlük temizlenemedi</string>
     <string name="menu_enable_word_wrap">Yeni Satıra Geç</string>
-    <!-- Notification -->
-    <string name="module_is_not_activated_yet">Xposed modülü henüz etkinleştirilmedi</string>
-    <string name="module_is_not_activated_yet_detailed">%s kuruldu, ancak henüz etkinleştirilmedi</string>
-    <string name="xposed_module_updated_notification_title">Xposed modül güncellemesi</string>
-    <string name="xposed_module_updated_notification_content">%s güncellendi, lütfen kapsamındaki uygulamaları durdurmaya ve yeniden başlatmaya zorlayın</string>
-    <string name="xposed_module_updated_notification_title_system">Xposed modülü güncellendi, sistemin yeniden başlatılması gerekiyor</string>
-    <string name="xposed_module_updated_notification_content_system">%s Güncelleme kapsamı Sistem Çerçevesi içerdiğinden, değişiklikleri uygulamak için yeniden başlatma gereklidir</string>
+    <string name="enabled_verbose_log">Ayrıntılı Günlükler Aktif</string>
+    <string name="disabled_verbose_log">Ayrıntılı Günlükler Deaktif</string>
     <!-- ModulesActivity -->
     <string name="module_empty_description">(açıklama yapılmadı)</string>
     <string name="warning_xposed_min_version">Bu modül daha yeni bir Xposed sürümü gerektiriyor (%d) ve bu nedenle etkinleştirilemez</string>
@@ -97,7 +98,7 @@
     <string name="module_settings">Modül ayarları</string>
     <string name="view_in_repo">Repo\'da görüntüle</string>
     <string name="module_uninstall_message">Bu modülü kaldırmak istiyor musunuz?</string>
-    <string name="module_uninstalled">Kaldırıldı %1$s</string>
+    <string name="module_uninstalled">%1$s kaldırıldı</string>
     <string name="module_uninstall_failed">Kaldırma başarısız</string>
     <string name="add_module_to_user">Kullanıcıya modül ekle</string>
     <string name="module_installed">Kullanıcıya %1$s eklendi %2$s</string>
@@ -126,10 +127,11 @@
     <string name="menu_show_modules">Modüller</string>
     <string name="menu_show_denylist">Reddetme Listesi</string>
     <string name="failed_to_save_scope_list">Kapsam listesi kaydedilemedi</string>
-    <string name="app_description">%1$s\nSürüm %2$s</string>
+    <string name="app_version">Sürüm: %1$s</string>
     <string name="use_recommended">Önerilen</string>
     <string name="no_scope_selected_has_recommended">Herhangi bir uygulama seçmediniz. Önerilen uygulamalar seçilsin mi?</string>
     <string name="use_recommended_message">Önerilen uygulamalar seçilsin mi?</string>
+    <string name="module_is_not_activated_yet">Xposed modülü henüz etkinleştirilmedi</string>
     <string name="requested_by_module">Önerilen</string>
     <string name="update_available">Güncelleme uygun: %1$s</string>
     <string name="module_disabled_no_selection">Hiçbir uygulama seçilmediği için %s modülü devre dışı bırakıldı.</string>
@@ -160,6 +162,7 @@
     <string name="settings_restore_summery">Modül ve kapsam listelerini geri yükle.</string>
     <string name="settings_backup">Yedek</string>
     <string name="settings_backup_failed2">Yedekleme başarısız oldu:\n%s</string>
+    <string name="enable_documentui">Lütfen DocumentUI\'yi etkinleştirin</string>
     <string name="settings_restore">Geri yükle</string>
     <string name="settings_restore_failed2">Geri yüklenemedi:\n%s</string>
     <string name="group_network">Ağ</string>
@@ -175,11 +178,14 @@
     <string name="settings_translation">Çeviriye katılın</string>
     <string name="settings_translation_summary">%s yazılımını çevirmemize yardım edin</string>
     <string name="pref_title_enable_auto_add_shortcut">Otomatik olarak bir kısayol ekle</string>
+    <string name="create_shortcut_summary">Parazit yönetici kısayolunu manuel olarak oluşturun</string>
     <string name="settings_enable_auto_add_shortcut_summary">Parazit olmayan yöneticilerde devre dışı bırakılınca yeni kısayol eklenmez</string>
     <string name="settings_update_channel">Güncelleme kanalı</string>
     <string name="update_channel_stable">Stabil</string>
     <string name="update_channel_bate">Beta</string>
     <string name="update_channel_nightly">Gecelik</string>
+    <string name="pref_title_restrict_classloader">Yalnızca modül sınıf yükleyicisi Xposed API\'yi kullanabilir</string>
+    <string name="pref_summary_restrict_classloader">Bu, bazı modülleri bozabilir ancak güvenlikten faydalanabilir (deneysel özellik)</string>
     <!-- Module Repo -->
     <string name="module_readme">Beni oku</string>
     <string name="module_releases">Sürümler</string>
@@ -193,15 +199,16 @@
     <string name="module_release_load_more">Eski sürümleri göster</string>
     <string name="module_release_no_more">Daha fazla sürüm yok</string>
     <string name="repo_load_failed">Modül deposu yüklenemedi: %s</string>
+    <string name="sort_upgradable_first">Önce yükseltilebilir</string>
     <!-- CrashReportActivity -->
     <string name="version_mismatch">LSPosed çerçevesinin sürümü (%1$d) yöneticininkiyle eşleşmiyor (%2$d). Lütfen LSPosed\'ı tekrar kurun.</string>
     <string name="manager_crashed">Yönetici çöktü</string>
     <string name="manager_crashed_info">bunu şuraya rapor et </string>
     <string name="send_crash_info">Çökme bilgisi gönder</string>
     <string name="crash_info_copied">Çökme bilgisi panoya kopyalandı</string>
+    <string name="info_copied">Panoya kopyalandı</string>
     <!-- Colors -->
-    <string name="color_pixel_blue">Pixel mavisi</string>
-    <string name="color_sakura">Kiraz çiçeği</string>
+    <string name="color_sakura">sakura</string>
     <string name="color_red">Kırmızı</string>
     <string name="color_pink">Pembe</string>
     <string name="color_purple">Mor</string>
@@ -219,6 +226,5 @@
     <string name="color_orange">Turuncu</string>
     <string name="color_deep_orange">Koyu turuncu</string>
     <string name="color_brown">Kahverengi</string>
-    <string name="color_grey">Gri</string>
     <string name="color_blue_grey">Mavi gri</string>
 </resources>

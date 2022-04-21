@@ -19,6 +19,7 @@
 
 package org.lsposed.manager.ui.fragment;
 
+import android.annotation.SuppressLint;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -62,6 +63,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import rikka.core.util.LabelComparator;
@@ -110,6 +112,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
         binding.appBar.setLiftable(true);
         binding.recyclerView.getBorderViewDelegate().setBorderVisibilityChangedListener((top, oldTop, bottom, oldBottom) -> binding.appBar.setLifted(!top));
         setupToolbar(binding.toolbar, binding.clickView, R.string.module_repo, R.menu.menu_repo);
+        binding.toolbar.setNavigationIcon(null);
         adapter = new RepoAdapter();
         adapter.setHasStableIds(true);
         adapter.registerAdapterDataObserver(observer);
@@ -181,12 +184,14 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
                 binding.recyclerView.setNestedScrollingEnabled(true);
             }
         });
+        searchView.findViewById(androidx.appcompat.R.id.search_edit_frame).setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT);
         int sort = App.getPreferences().getInt("repo_sort", 0);
         if (sort == 0) {
             menu.findItem(R.id.item_sort_by_name).setChecked(true);
         } else if (sort == 1) {
             menu.findItem(R.id.item_sort_by_update_time).setChecked(true);
         }
+        menu.findItem(R.id.item_upgradable_first).setChecked(App.getPreferences().getBoolean("upgradable_first", true));
     }
 
     @Override
@@ -212,7 +217,9 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
 
     @Override
     public void onRepoLoaded() {
-        adapter.refresh();
+        if (adapter != null) {
+            adapter.refresh();
+        }
         updateRepoSummary();
     }
 
@@ -238,6 +245,10 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             item.setChecked(true);
             App.getPreferences().edit().putInt("repo_sort", 1).apply();
             adapter.refresh();
+        } else if (itemId == R.id.item_upgradable_first) {
+            item.setChecked(!item.isChecked());
+            App.getPreferences().edit().putBoolean("upgradable_first", item.isChecked()).apply();
+            adapter.refresh();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -257,37 +268,44 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             return new RepoAdapter.ViewHolder(ItemOnlinemoduleBinding.inflate(getLayoutInflater(), parent, false));
         }
 
+        RepoLoader.ModuleVersion getUpgradableVer(OnlineModule module) {
+            ModuleUtil.InstalledModule installedModule = moduleUtil.getModule(module.getName());
+            if (installedModule != null) {
+                var ver = repoLoader.getModuleLatestVersion(installedModule.packageName);
+                if (ver != null && ver.upgradable(installedModule.versionCode, installedModule.versionName))
+                    return ver;
+            }
+            return null;
+        }
+
         @Override
         public void onBindViewHolder(@NonNull RepoAdapter.ViewHolder holder, int position) {
             OnlineModule module = showList.get(position);
             holder.appName.setText(module.getDescription());
+            holder.appPackageName.setText(module.getName());
 
-            SpannableStringBuilder sb = new SpannableStringBuilder(module.getName());
+            SpannableStringBuilder sb = new SpannableStringBuilder();
 
             String summary = module.getSummary();
             if (summary != null) {
-                sb.append("\n");
                 sb.append(summary);
             }
             holder.appDescription.setVisibility(View.VISIBLE);
             holder.appDescription.setText(sb);
             sb = new SpannableStringBuilder();
-            ModuleUtil.InstalledModule installedModule = moduleUtil.getModule(module.getName());
-            if (installedModule != null) {
-                var ver = repoLoader.getModuleLatestVersion(installedModule.packageName);
-                if (ver != null && ver.upgradable(installedModule.versionCode, installedModule.versionName)) {
-                    String hint = getString(R.string.update_available, ver.versionName);
-                    sb.append(hint);
-                    final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ResourceUtils.resolveColor(requireActivity().getTheme(), androidx.appcompat.R.attr.colorAccent));
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        final TypefaceSpan typefaceSpan = new TypefaceSpan(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-                        sb.setSpan(typefaceSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-                    } else {
-                        final StyleSpan styleSpan = new StyleSpan(Typeface.BOLD);
-                        sb.setSpan(styleSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-                    }
-                    sb.setSpan(foregroundColorSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            var upgradableVer = getUpgradableVer(module);
+            if (upgradableVer != null) {
+                String hint = getString(R.string.update_available, upgradableVer.versionName);
+                sb.append(hint);
+                final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ResourceUtils.resolveColor(requireActivity().getTheme(), com.google.android.material.R.attr.colorPrimary));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    final TypefaceSpan typefaceSpan = new TypefaceSpan(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+                    sb.setSpan(typefaceSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                } else {
+                    final StyleSpan styleSpan = new StyleSpan(Typeface.BOLD);
+                    sb.setSpan(styleSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
                 }
+                sb.setSpan(foregroundColorSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
             }
             if (sb.length() > 0) {
                 holder.hint.setVisibility(View.VISIBLE);
@@ -298,7 +316,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
 
             holder.itemView.setOnClickListener(v -> {
                 searchView.clearFocus();
-                getNavController().navigate(RepoFragmentDirections.actionRepoFragmentToRepoItemFragment(module.getName(), module.getDescription()));
+                safeNavigate(RepoFragmentDirections.actionRepoFragmentToRepoItemFragment(module.getName()));
             });
             holder.itemView.setTooltipText(module.getDescription());
         }
@@ -308,17 +326,29 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             return showList.size();
         }
 
-        private void setLoaded(boolean isLoaded) {
-            this.isLoaded = isLoaded;
-            runOnUiThread(this::notifyDataSetChanged);
+        @SuppressLint("NotifyDataSetChanged")
+        private void setLoaded(List<OnlineModule> list, boolean isLoaded) {
+            runOnUiThread(() -> {
+                if (list != null) showList = list;
+                this.isLoaded = isLoaded;
+                notifyDataSetChanged();
+            });
         }
 
         public void setData(Collection<OnlineModule> modules) {
             if (modules == null) return;
-            setLoaded(false);
+            setLoaded(null, false);
             int sort = App.getPreferences().getInt("repo_sort", 0);
+            boolean upgradableFirst = App.getPreferences().getBoolean("upgradable_first", true);
+            ConcurrentHashMap<String, Boolean> upgradable = new ConcurrentHashMap<>();
             fullList = modules.parallelStream().filter((onlineModule -> !onlineModule.isHide() && !onlineModule.getReleases().isEmpty()))
                     .sorted((a, b) -> {
+                        if (upgradableFirst) {
+                            var aUpgrade = upgradable.computeIfAbsent(a.getName(), n -> getUpgradableVer(a) != null);
+                            var bUpgrade = upgradable.computeIfAbsent(b.getName(), n -> getUpgradableVer(b) != null);
+                            if (aUpgrade && !bUpgrade) return -1;
+                            else if (!aUpgrade && bUpgrade) return 1;
+                        }
                         if (sort == 0) {
                             return labelComparator.compare(a.getDescription(), b.getDescription());
                         } else {
@@ -331,7 +361,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
 
         public void fullRefresh() {
             runAsync(() -> {
-                setLoaded(false);
+                setLoaded(null, false);
                 repoLoader.loadRemoteData();
                 refresh();
             });
@@ -359,6 +389,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
         class ViewHolder extends RecyclerView.ViewHolder {
             ConstraintLayout root;
             TextView appName;
+            TextView appPackageName;
             TextView appDescription;
             TextView hint;
 
@@ -366,6 +397,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
                 super(binding.getRoot());
                 root = binding.itemRoot;
                 appName = binding.appName;
+                appPackageName=binding.appPackageName;
                 appDescription = binding.description;
                 hint = binding.hint;
             }
@@ -397,8 +429,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
                 //noinspection unchecked
-                showList = (List<OnlineModule>) results.values;
-                setLoaded(true);
+                setLoaded((List<OnlineModule>) results.values, true);
             }
         }
     }

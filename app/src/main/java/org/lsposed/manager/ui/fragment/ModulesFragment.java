@@ -52,8 +52,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavOptions;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
@@ -89,6 +89,7 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import rikka.core.util.ResourceUtils;
+import rikka.material.app.LocaleDelegate;
 import rikka.recyclerview.RecyclerViewKt;
 
 public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleListener, RepoLoader.RepoListener {
@@ -147,6 +148,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
         binding = FragmentPagerBinding.inflate(inflater, container, false);
         binding.appBar.setLiftable(true);
         setupToolbar(binding.toolbar, binding.clickView, R.string.Modules, R.menu.menu_modules);
+        binding.toolbar.setNavigationIcon(null);
         pagerAdapter = new PagerAdapter(this);
         binding.viewPager.setAdapter(pagerAdapter);
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -201,6 +203,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             public void onViewDetachedFromWindow(View v) {
             }
         });
+        searchView.findViewById(androidx.appcompat.R.id.search_edit_frame).setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT);
     }
 
     @Override
@@ -261,7 +264,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
     }
 
     void installModuleToUser(ModuleUtil.InstalledModule module, UserInfo user) {
-        new BlurBehindDialogBuilder(requireActivity())
+        new BlurBehindDialogBuilder(requireActivity(), R.style.ThemeOverlay_MaterialAlertDialog_Centered_FullWidthButtons)
                 .setTitle(getString(R.string.install_to_user, user.name))
                 .setMessage(getString(R.string.install_to_user_message, module.getAppName(), user.name))
                 .setPositiveButton(android.R.string.ok, (dialog, which) ->
@@ -305,7 +308,8 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             ConfigManager.startActivityAsUserWithFeature(new Intent(ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", selectedModule.packageName, null)), selectedModule.userId);
             return true;
         } else if (itemId == R.id.menu_uninstall) {
-            new BlurBehindDialogBuilder(requireActivity())
+            new BlurBehindDialogBuilder(requireActivity(), R.style.ThemeOverlay_MaterialAlertDialog_FullWidthButtons)
+                    .setIcon(selectedModule.app.loadIcon(pm))
                     .setTitle(selectedModule.getAppName())
                     .setMessage(R.string.module_uninstall_message)
                     .setPositiveButton(android.R.string.ok, (dialog, which) ->
@@ -320,7 +324,10 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
                     .show();
             return true;
         } else if (itemId == R.id.menu_repo) {
-            getNavController().navigate(ModulesFragmentDirections.actionModulesFragmentToRepoItemFragment(selectedModule.packageName, selectedModule.getAppName()));
+            var navController = getNavController();
+            navController.navigate(
+                    new Uri.Builder().scheme("lsposed").authority("repo").appendQueryParameter("modulePackageName", selectedModule.packageName).build(),
+                    new NavOptions.Builder().setEnterAnim(R.anim.fragment_enter).setExitAnim(R.anim.fragment_exit).setPopEnterAnim(R.anim.fragment_enter_pop).setPopExitAnim(R.anim.fragment_exit_pop).setLaunchSingleTop(true).setPopUpTo(getNavController().getGraph().getStartDestinationId(), false, true).build());
             return true;
         } else if (itemId == R.id.menu_compile_speed) {
             CompileDialogFragment.speed(getChildFragmentManager(), selectedModule.pkg.applicationInfo);
@@ -510,7 +517,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             ModuleUtil.InstalledModule item = showList.get(position);
             String appName;
             if (item.userId != 0) {
-                appName = String.format("%s (%s)", item.getAppName(), item.userId);
+                appName = String.format(LocaleDelegate.getDefaultLocale(), "%s (%d)", item.getAppName(), item.userId);
             } else {
                 appName = item.getAppName();
             }
@@ -535,7 +542,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
                 sb.append(getString(R.string.module_empty_description));
             }
             holder.appDescription.setText(sb);
-
+            holder.appDescription.setVisibility(View.VISIBLE);
             sb = new SpannableStringBuilder();
 
             int installXposedVersion = ConfigManager.getXposedApiVersion();
@@ -551,7 +558,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             }
             if (warningText != null) {
                 sb.append(warningText);
-                final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ContextCompat.getColor(requireActivity(), rikka.material.R.color.material_red_500));
+                final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ResourceUtils.resolveColor(requireActivity().getTheme(), com.google.android.material.R.attr.colorError));
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     final TypefaceSpan typefaceSpan = new TypefaceSpan(Typeface.create("sans-serif-medium", Typeface.NORMAL));
                     sb.setSpan(typefaceSpan, sb.length() - warningText.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
@@ -566,7 +573,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
                 if (warningText != null) sb.append("\n");
                 String recommended = getString(R.string.update_available, ver.versionName);
                 sb.append(recommended);
-                final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ResourceUtils.resolveColor(requireActivity().getTheme(), androidx.appcompat.R.attr.colorAccent));
+                final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ResourceUtils.resolveColor(requireActivity().getTheme(), androidx.appcompat.R.attr.colorPrimary));
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     final TypefaceSpan typefaceSpan = new TypefaceSpan(Typeface.create("sans-serif-medium", Typeface.NORMAL));
                     sb.setSpan(typefaceSpan, sb.length() - recommended.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
@@ -587,7 +594,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
                 holder.root.setAlpha(moduleUtil.isModuleEnabled(item.packageName) ? 1.0f : .5f);
                 holder.itemView.setOnClickListener(v -> {
                     searchView.clearFocus();
-                    getNavController().navigate(ModulesFragmentDirections.actionModulesFragmentToAppListFragment(item.packageName, item.userId));
+                    safeNavigate(ModulesFragmentDirections.actionModulesFragmentToAppListFragment(item.packageName, item.userId));
                 });
                 holder.itemView.setOnLongClickListener(v -> {
                     searchView.clearFocus();
@@ -661,7 +668,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
 
         public void fullRefresh() {
             runAsync(() -> {
-                setLoaded(false);
+                setLoaded(null, false);
                 moduleUtil.reloadInstalledModules();
                 refresh();
             });
@@ -671,7 +678,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             var modules = moduleUtil.getModules();
             if (modules == null) return;
             Comparator<PackageInfo> cmp = AppHelper.getAppListComparator(0, pm);
-            setLoaded(false);
+            setLoaded(null, false);
             var tmpList = new ArrayList<ModuleUtil.InstalledModule>();
             modules.values().parallelStream()
                     .sorted((a, b) -> {
@@ -712,8 +719,9 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
         };
 
         @SuppressLint("NotifyDataSetChanged")
-        private void setLoaded(boolean loaded) {
+        private void setLoaded(List<ModuleUtil.InstalledModule> list, boolean loaded) {
             runOnUiThread(() -> {
+                if (list != null) showList = list;
                 isLoaded = loaded;
                 notifyDataSetChanged();
             });
@@ -771,8 +779,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
                 //noinspection unchecked
-                showList = (List<ModuleUtil.InstalledModule>) results.values;
-                setLoaded(true);
+                setLoaded((List<ModuleUtil.InstalledModule>) results.values, true);
             }
         }
     }

@@ -20,6 +20,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
     <string name="info">Informacje</string>
+    <string name="overview">Przegląd</string>
     <string name="Modules">Moduły</string>
     <plurals name="modules_enabled_count">
         <item quantity="one">%d moduł aktywowany</item>
@@ -29,11 +30,18 @@
     </plurals>
     <string name="Logs">Logi</string>
     <string name="Settings">Ustawienia</string>
+    <string name="feedback_or_suggestion">Opinie lub sugestie</string>
     <string name="About">O aplikacji</string>
     <string name="report_issue">Zgłoś problem</string>
     <string name="module_repo">Repozytorium</string>
-    <string name="module_repo_loading">Ładowanie...</string>
+    <string name="module_repo_loading">Ładowanie…</string>
     <string name="module_repo_up_to_date">Wszystkie moduły są aktualne</string>
+    <plurals name="module_repo_upgradable">
+        <item quantity="one">%d moduł możliwy do aktualizacji</item>
+        <item quantity="few">%d moduły z możliwością aktualizacji</item>
+        <item quantity="many">%d moduły z możliwością aktualizacji</item>
+        <item quantity="other">możliwa aktualizacja %d modułów</item>
+    </plurals>
     <string name="about_view_source_code"><![CDATA[Zobacz kod źródłowy na %1$s<br/>Dołącz do naszego kanału %2$s]]></string>
     <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">Adiker</string>
     <string name="install">Instaluj</string>
@@ -44,7 +52,7 @@
     <string name="partial_activated">Częściowo aktywowano</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy nie jest prawidłowo załadowany</string>
     <string name="selinux_policy_not_loaded"><![CDATA[Moduły, które podpinają System Framework nie zadziałają.<br/>Zgłoś to do<a href="https://github.com/topjohnwu/Magisk/issues"><b>programisty</b></a> Magisk.]]></string>
-    <string name="system_inject_fail_summary">Wstrzyknięcie System Framework nie powiodło się</string>
+    <string name="system_inject_fail_summary">Wstrzyknięcie Frameworku Systemowego nie powiodło się</string>
     <string name="system_inject_fail"><![CDATA[Jest to rzadkie i może być spowodowane przez <b>Magisk</b> lub niektóre moduły Magisk niskiej jakości.<br/>Spróbuj wyłączyć moduły Magisk inne niż Riru i LSPosed lub przesłać pełny log programistom.]]></string>
     <string name="system_prop_incorrect_summary">Nieprawidłowy system prop</string>
     <string name="system_prop_incorrect"><![CDATA[Niektóre niezbędne właściwości systemowe zostały usunięte lub zmienione.<br/>Moduły mogą czasami działać niepoprawnie.]]></string>
@@ -57,21 +65,24 @@
     <string name="info_system_version">Wersja systemu</string>
     <string name="info_device">Urządzenie</string>
     <string name="info_system_abi">System ABI</string>
-    <string name="info_api">Interfejs injekcji</string>
+    <string name="info_api">Interfejs wstrzykiwania</string>
+    <string name="info_dex2oat_wrapper">Optymalizator Wrapper</string>
+    <string name="supported">Obsługiwana strona</string>
+    <string name="unsupported_android_version">Nieobsługiwana (niezadowalająca wersja systemu Android)</string>
+    <string name="unsupported_crashed">Nieobsługiwane (zawieszone)</string>
     <string name="parasitic_recommend">Rekomendowany menadżer Parasitic</string>
     <string name="parasitic_recommend_summary">LSPosed wspiera teraz pasożyty systemowe, aby uniknąć wykrycia. Możesz odinstalować menadżer po pomyśłnym utworzeniu skrótu w parastic manager. W każdym wypadku możesz zainstalować menadżer spowrotem z pliku /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Utwórz skrót</string>
-    <string name="never_show">Nigdy nie pokazuje</string>
-    <string name="failed_to_create_shortcut">Nie udało się utworzyć skrótu: %1$s</string>
+    <string name="never_show">Nigdy nie pokazuj</string>
     <string name="update_lsposed">Aktualizuj LSPosed</string>
-    <string name="update_lsposed_msg">Potwierdzić aktualizację LSPosed? To urządzenie uruchomi się ponownie po zakończeniu aktualizacji</string>
+    <string name="update_lsposed_msg">Czy chcesz zatwierdzić aktualizację LSPosed? Urządzenie zostanie uruchomione ponownie po zakończeniu aktualizacji</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Zapisz</string>
     <string name="nav_item_logs_verbose">Logi verbose</string>
     <string name="nav_item_logs_module">Logi modułów</string>
     <string name="logs_save_failed2">Nie udało się zapisać:\n%s</string>
     <string name="menuClearLog">Wyczyść log teraz</string>
-    <string name="logs_cleared">Logi pomyślnie wyczyszczone.</string>
+    <string name="logs_cleared">Logi zostały pomyślnie wyczyszczone.</string>
     <string name="scroll_top">Przewiń na górę</string>
     <string name="loading">Ładowanie…</string>
     <string name="scroll_bottom">Przewiń na dół</string>
@@ -81,16 +92,9 @@
     <string name="menu_enable_word_wrap">Zawijanie wierszy</string>
     <string name="enabled_verbose_log">Logi verbose włączone</string>
     <string name="disabled_verbose_log">Logi verbose wyłączone</string>
-    <!-- Notification -->
-    <string name="module_is_not_activated_yet">Moduł Xposed nie jest jeszcze aktywowany</string>
-    <string name="module_is_not_activated_yet_detailed">%s został zainstalowany, ale nie jest jeszcze aktywowany</string>
-    <string name="xposed_module_updated_notification_title">Moduł Xposed zaktualizowany</string>
-    <string name="xposed_module_updated_notification_content">%s został zaktualizowany, wymuś zatrzymanie i ponownie uruchom aplikacje w jego zakresie</string>
-    <string name="xposed_module_updated_notification_title_system">Zaktualizowano moduł Xposed, wymagane ponowne uruchomienie systemu</string>
-    <string name="xposed_module_updated_notification_content_system">%s został zaktualizowany, ponieważ zakres zawiera System Framework, wymagany restart aby zastosować zmiany</string>
     <!-- ModulesActivity -->
     <string name="module_empty_description">(nie podano opisu)</string>
-    <string name="warning_xposed_min_version">Ten moduł wymaga nowszej wersji Xposed (%d) i dlatego nie może być aktywowany</string>
+    <string name="warning_xposed_min_version">Ten moduł wymaga nowszej wersji Xposed (%d) przez co nie może być aktywowany</string>
     <string name="no_min_version_specified">Ten moduł nie określa wymaganej wersji Xposed.</string>
     <string name="warning_min_version_too_low">Ten moduł został utworzony dla Xposed w wersji %1$d, ale ze względu na niekompatybilne zmiany w wersji %2$d, został wyłączony</string>
     <string name="warning_installed_on_external_storage">Ten moduł nie może być załadowany, ponieważ jest zainstalowany na karcie SD, przenieś go do pamięci wewnętrznej</string>
@@ -111,7 +115,7 @@
     <string name="compile_speed">Ponownie zoptymalizuj</string>
     <string name="compile_speed_msg">Optymalizowanie…</string>
     <string name="compile_done">Optymalizacja zakończona</string>
-    <string name="app_launch">Uruchom to</string>
+    <string name="app_launch">Uruchom</string>
     <string name="compile_failed">Optymalizacja nie powiodła się: zwrócona wartość jest pusta</string>
     <string name="compile_failed_with_info">Optymalizacja nie powiodła się: </string>
     <string name="sort_by_name">Nazwa aplikacji</string>
@@ -125,12 +129,13 @@
     <string name="no_scope_selected">Nie wybrałeś żadnej aplikacji. Kontynuować?</string>
     <string name="menu_show_games">Gry</string>
     <string name="menu_show_modules">Moduły</string>
-    <string name="menu_show_denylist">Zabroniona lista</string>
+    <string name="menu_show_denylist">Lista zabronionych</string>
     <string name="failed_to_save_scope_list">Nie udało się zapisać listy zakresu</string>
-    <string name="app_description">%1$s\nWersja %2$s</string>
+    <string name="app_version">Wersja: %1$s</string>
     <string name="use_recommended">Rekomendowane</string>
     <string name="no_scope_selected_has_recommended">Nie wybrałeś żadnej aplikacji. Wybrać rekomendowane aplikacje?</string>
     <string name="use_recommended_message">Wybrać rekomendowane aplikacje?</string>
+    <string name="module_is_not_activated_yet">Moduł Xposed nie jest jeszcze aktywowany</string>
     <string name="requested_by_module">Rekomendowane</string>
     <string name="update_available">Dostępna aktualizacja: %1$s</string>
     <string name="module_disabled_no_selection">Moduł %s został wyłączony, ponieważ nie wybrano żadnej aplikacji.</string>
@@ -144,7 +149,7 @@
     <string name="reboot_required">Restart jest wymagany aby ta zmiana została zastosowana</string>
     <string name="reboot">Restart</string>
     <string name="menu_hide">Ukryj</string>
-    <string name="deny_list">%s jest na mojej liście zablokowanych. Może nie odnieść skutku.</string>
+    <string name="deny_list">%s jest na liście zablokowanych. Może nie odnieść skutku.</string>
     <string name="deny_list_info">Na zablokowanej liście</string>
     <!-- ModulesActivity and AppListActivity -->
     <string name="modules_other_app">Wyświetl w innej aplikacji</string>
@@ -157,8 +162,11 @@
     <string name="pure_black_dark_theme_summary">Użyj czarnego motywu, jeśli ciemny motyw jest włączony</string>
     <string name="settings_group_theme">Motyw</string>
     <string name="settings_backup_and_restore">Kopia zapasowa i przywracanie</string>
+    <string name="settings_backup_summery">Kopia zapasowa listy modułów i zakresów.</string>
+    <string name="settings_restore_summery">Przywrócenie listy modułów i listy zakresów.</string>
     <string name="settings_backup">Kopia zapasowa</string>
     <string name="settings_backup_failed2">Nie udało się utworzyć kopii zapasowej:\n%s</string>
+    <string name="enable_documentui">Proszę włączyć DocumentUI</string>
     <string name="settings_restore">Przywróć</string>
     <string name="settings_restore_failed2">Nie udało się przywrócić:\n%s</string>
     <string name="group_network">Sieć</string>
@@ -174,15 +182,19 @@
     <string name="settings_translation">Weź udział w tłumaczeniu</string>
     <string name="settings_translation_summary">Pomóż nam przetłumaczyć %s na Twój język</string>
     <string name="pref_title_enable_auto_add_shortcut">Automatycznie dodaj skrót</string>
-    <string name="settings_update_channel">Zaktualizuj kanał</string>
+    <string name="create_shortcut_summary">Ręcznie utwórz skrót do menedżera pasożytów</string>
+    <string name="settings_enable_auto_add_shortcut_summary">Nie zostaną dodane żadne nowe skróty, jeśli są wyłączone w menedżerze niepasożytniczym.</string>
+    <string name="settings_update_channel">Kanał aktualizacji</string>
     <string name="update_channel_stable">Stabilny</string>
     <string name="update_channel_bate">Beta</string>
-    <string name="update_channel_nightly">Wersja nightly</string>
+    <string name="update_channel_nightly">Wersja nocna</string>
+    <string name="pref_title_restrict_classloader">Tylko moduł classloader może korzystać z Xposed API</string>
+    <string name="pref_summary_restrict_classloader">Może to złamać niektóre moduły, ale przyniesie korzyści dla bezpieczeństwa (funkcja eksperymentalna)</string>
     <!-- Module Repo -->
-    <string name="module_readme">Przeczytaj</string>
+    <string name="module_readme">Readme</string>
     <string name="module_releases">Wersje</string>
     <string name="module_information">Informacje</string>
-    <string name="module_information_homepage">Strona domowa</string>
+    <string name="module_information_homepage">Strona główna</string>
     <string name="module_information_source_url">Kod źródłowy</string>
     <string name="module_information_collaborators">Współtwórcy</string>
     <string name="module_release_view_assets">Assety</string>
@@ -191,14 +203,15 @@
     <string name="module_release_load_more">Pokaż starsze wersje</string>
     <string name="module_release_no_more">Nie ma więcej wersji</string>
     <string name="repo_load_failed">Nie udało się załadować repozytorium modułu: %s</string>
+    <string name="sort_upgradable_first">Możliwość uaktualnienia w pierwszej kolejności</string>
     <!-- CrashReportActivity -->
     <string name="version_mismatch">Wersja LSPosed framework (%1$d) nie jest taka sama jak wersja menadżera (%2$d). Zainstaluj ponownie LSPosed.</string>
     <string name="manager_crashed">Menedżer uległ awarii</string>
     <string name="manager_crashed_info">zgłoś to do </string>
     <string name="send_crash_info">Wyślij informacje o awarii</string>
     <string name="crash_info_copied">Informacje o awarii skopiowane do schowka</string>
+    <string name="info_copied">Skopiowane do schowka</string>
     <!-- Colors -->
-    <string name="color_pixel_blue">Pikselowy niebieski</string>
     <string name="color_sakura">Sakura</string>
     <string name="color_red">Czerwony</string>
     <string name="color_pink">Różowy</string>
@@ -217,7 +230,5 @@
     <string name="color_orange">Pomarańczowy</string>
     <string name="color_deep_orange">Ciemny pomarańczowy</string>
     <string name="color_brown">Brązowy</string>
-    <string name="color_grey">Szary</string>
     <string name="color_blue_grey">Niebiesko szary</string>
-    <string name="feedback_or_suggestion">Opinie lub sugestie</string>
 </resources>

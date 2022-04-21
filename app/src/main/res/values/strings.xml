@@ -20,6 +20,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
     <string name="info">Info</string>
+    <string name="overview">Overview</string>
     <string name="Modules">Modules</string>
     <plurals name="modules_enabled_count">
         <item quantity="one">%d module enabled</item>
@@ -27,6 +28,7 @@
     </plurals>
     <string name="Logs">Logs</string>
     <string name="Settings">Settings</string>
+    <string name="feedback_or_suggestion">Feedback or suggestion</string>
     <string name="About">About</string>
     <string name="report_issue">Report issue</string>
     <string name="module_repo">Repository</string>
@@ -61,11 +63,14 @@
     <string name="info_device">Device</string>
     <string name="info_system_abi">System ABI</string>
     <string name="info_api">Injection Interface</string>
+    <string name="info_dex2oat_wrapper">Optimizer Wrapper</string>
+    <string name="supported">Supported</string>
+    <string name="unsupported_android_version">Unsupported (Android version unsatisfied)</string>
+    <string name="unsupported_crashed">Unsupported (Crashed)</string>
     <string name="parasitic_recommend">Parasitic Manager Recommended</string>
     <string name="parasitic_recommend_summary">LSPosed now supports system parasitization to avoid detection. You can safely uninstall the manager after successfully creating a shortcut of the parasitic manager. In any case you can install the manager back from /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Create shortcut</string>
     <string name="never_show">Never show</string>
-    <string name="failed_to_create_shortcut">Failed to create shortcut: %1$s</string>
     <string name="update_lsposed">Update LSPosed</string>
     <string name="update_lsposed_msg">Confirm to update LSPosed? This device will reboot after update completion</string>
 
@@ -85,14 +90,6 @@
     <string name="menu_enable_word_wrap">Word Wrap</string>
     <string name="enabled_verbose_log">Verbose log enabled</string>
     <string name="disabled_verbose_log">Verbose log disabled</string>
-
-    <!-- Notification -->
-    <string name="module_is_not_activated_yet">Xposed module is not activated yet</string>
-    <string name="module_is_not_activated_yet_detailed">%s has been installed, but is not activated yet</string>
-    <string name="xposed_module_updated_notification_title">Xposed module updated</string>
-    <string name="xposed_module_updated_notification_content">%s has been updated, please force stop and restart apps in its scope</string>
-    <string name="xposed_module_updated_notification_title_system">Xposed module updated, system reboot required</string>
-    <string name="xposed_module_updated_notification_content_system">%s has been updated, since the scope contains System Framework, required reboot to apply changes</string>
 
     <!-- ModulesActivity -->
     <string name="module_empty_description">(no description provided)</string>
@@ -134,10 +131,11 @@
     <string name="menu_show_modules">Modules</string>
     <string name="menu_show_denylist">Denylist</string>
     <string name="failed_to_save_scope_list">Failed to save scope list</string>
-    <string name="app_description">%1$s\nVersion %2$s</string>
+    <string name="app_version">Version: %1$s</string>
     <string name="use_recommended">Recommended</string>
     <string name="no_scope_selected_has_recommended">You did not select any app. Select recommended apps?</string>
     <string name="use_recommended_message">Select recommended apps?</string>
+    <string name="module_is_not_activated_yet">Xposed module is not activated yet</string>
     <string name="requested_by_module">Recommended</string>
     <string name="update_available">Update available: %1$s</string>
     <string name="module_disabled_no_selection">Module %s has been disabled since no app selected.</string>
@@ -170,6 +168,7 @@
     <string name="settings_restore_summery">Restore module list and scope lists.</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_backup_failed2">Failed to backup:\n%s</string>
+    <string name="enable_documentui">Please enable DocumentUI</string>
     <string name="settings_restore">Restore</string>
     <string name="settings_restore_failed2">Failed to restore:\n%s</string>
     <string name="group_network">Network</string>
@@ -185,11 +184,14 @@
     <string name="settings_translation">Participate in translation</string>
     <string name="settings_translation_summary">Help us translate %s into your language</string>
     <string name="pref_title_enable_auto_add_shortcut">Automatically add a shortcut</string>
+    <string name="create_shortcut_summary">Manually create parasitic manager shortcut</string>
     <string name="settings_enable_auto_add_shortcut_summary">No new shortcuts will be added when disabled in the non-parasitic manager</string>
     <string name="settings_update_channel">Update channel</string>
     <string name="update_channel_stable">Stable</string>
     <string name="update_channel_bate">Beta</string>
     <string name="update_channel_nightly">Nightly build</string>
+    <string name="pref_title_restrict_classloader">Only module classloader can use Xposed API</string>
+    <string name="pref_summary_restrict_classloader">This may break some modules but benefit security (experimental feature)</string>
 
     <!-- Module Repo -->
     <string name="module_readme">Readme</string>
@@ -204,6 +206,7 @@
     <string name="module_release_load_more">Show older versions</string>
     <string name="module_release_no_more">No more release</string>
     <string name="repo_load_failed">Failed to load module repo: %s</string>
+    <string name="sort_upgradable_first">Upgradable first</string>
 
     <!-- CrashReportActivity -->
     <string name="version_mismatch">The version of the LSPosed framework (%1$d) does not match manager (%2$d). Please reinstall LSPosed.</string>
@@ -211,9 +214,9 @@
     <string name="manager_crashed_info">report this to </string>
     <string name="send_crash_info">Send crash info</string>
     <string name="crash_info_copied">Crash info copied to clipboard</string>
+    <string name="info_copied">Copied to clipboard</string>
 
     <!-- Colors -->
-    <string name="color_pixel_blue">Pixel blue</string>
     <string name="color_sakura">Sakura</string>
     <string name="color_red">Red</string>
     <string name="color_pink">Pink</string>
@@ -232,7 +235,5 @@
     <string name="color_orange">Orange</string>
     <string name="color_deep_orange">Deep orange</string>
     <string name="color_brown">Brown</string>
-    <string name="color_grey">Grey</string>
     <string name="color_blue_grey">Blue grey</string>
-    <string name="feedback_or_suggestion">Feedback or suggestion</string>
 </resources>

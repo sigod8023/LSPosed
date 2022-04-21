@@ -6,6 +6,7 @@ on:
     branches: [ master ]
     paths:
       - app/src/main/res/values/strings.xml
+      - daemon/src/main/res/values/strings.xml
 
 jobs:
   synchronize-with-crowdin:
@@ -15,7 +16,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: crowdin action
-      uses: crowdin/github-action@1.0.4
+      uses: crowdin/github-action@master
       with:
         upload_translations: false
         download_translations: false

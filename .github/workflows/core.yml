@@ -46,25 +46,28 @@ jobs:
       with:
         path: |
           ~/.gradle/caches/build-cache-*
+          ~/.gradle/buildOutputCleanup/cache.properties
         key: gradle-builds-core-${{ github.sha }}
         restore-keys: |
           gradle-builds
-    - name: Cache Ccache
+    - name: Cache native build
       uses: actions/cache@v2
       with:
-        path: ~/.ccache
-        key: ccache-cache-${{ github.sha }}
-        restore-keys: ccache-cache-
-    - name: Install ccache
+        path: |
+          ~/.ccache
+          magisk-loader/build/.lto-cache
+          daemon/build/.lto-cache
+          dex2oat/build/.lto-cache
+        key: native-cache-${{ github.sha }}
+        restore-keys: native-cache-
+    - name: Install dep
       run: |
-        sudo apt-get install -y ccache
+        sudo apt-get install -y ccache ninja-build
         ccache -o max_size=1G
         ccache -o hash_dir=false
         ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
         ccache -zp
     - name: Build with Gradle
-      env:
-        NDK_CCACHE: ccache
       run: |
         [ $(du -s ~/.gradle/wrapper | awk '{ print $1 }') -gt 250000 ] && rm -rf ~/.gradle/wrapper/* || true
         find ~/.gradle/caches -exec touch -d "2 days ago" {} + || true
@@ -73,20 +76,22 @@ jobs:
         echo 'org.gradle.vfs.watch=true' >> gradle.properties
         echo 'org.gradle.jvmargs=-Xmx2048m' >> gradle.properties
         echo 'android.native.buildOutput=verbose' >> gradle.properties
+        ln -s $(which ninja) $(dirname $(which cmake)) # https://issuetracker.google.com/issues/206099937
+        echo "cmake.dir=$(dirname $(dirname $(which cmake)))" >> local.properties
         ./gradlew zipAll
         ccache -s
     - name: Prepare artifact
       if: success()
       id: prepareArtifact
       run: |
-        riruReleaseName=`ls core/release/LSPosed-v*-riru-release.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=riruReleaseName::$riruReleaseName"
-        riruDebugName=`ls core/release/LSPosed-v*-riru-debug.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=riruDebugName::$riruDebugName"
-        zygiskReleaseName=`ls core/release/LSPosed-v*-zygisk-release.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=zygiskReleaseName::$zygiskReleaseName"
-        zygiskDebugName=`ls core/release/LSPosed-v*-zygisk-debug.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=zygiskDebugName::$zygiskDebugName"
-        unzip core/release/LSPosed-v*-riru-release.zip -d LSPosed-riru-release
-        unzip core/release/LSPosed-v*-riru-debug.zip -d LSPosed-riru-debug
-        unzip core/release/LSPosed-v*-zygisk-release.zip -d LSPosed-zygisk-release
-        unzip core/release/LSPosed-v*-zygisk-debug.zip -d LSPosed-zygisk-debug
+        riruReleaseName=`ls magisk-loader/release/LSPosed-v*-riru-release.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=riruReleaseName::$riruReleaseName"
+        riruDebugName=`ls magisk-loader/release/LSPosed-v*-riru-debug.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=riruDebugName::$riruDebugName"
+        zygiskReleaseName=`ls magisk-loader/release/LSPosed-v*-zygisk-release.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=zygiskReleaseName::$zygiskReleaseName"
+        zygiskDebugName=`ls magisk-loader/release/LSPosed-v*-zygisk-debug.zip | awk -F '(/|.zip)' '{print $3}'` && echo "::set-output name=zygiskDebugName::$zygiskDebugName"
+        unzip magisk-loader/release/LSPosed-v*-riru-release.zip -d LSPosed-riru-release
+        unzip magisk-loader/release/LSPosed-v*-riru-debug.zip -d LSPosed-riru-debug
+        unzip magisk-loader/release/LSPosed-v*-zygisk-release.zip -d LSPosed-zygisk-release
+        unzip magisk-loader/release/LSPosed-v*-zygisk-debug.zip -d LSPosed-zygisk-debug
     - name: Upload riru release
       uses: actions/upload-artifact@v2
       with:
@@ -112,8 +117,16 @@ jobs:
       with:
         name: mappings
         path: |
-          core/build/outputs/mapping
+          magisk-loader/build/outputs/mapping
           app/build/outputs/mapping
+    - name: Upload symbols
+      uses: actions/upload-artifact@v2
+      with:
+        name: symbols
+        path: |
+          magisk-loader/build/symbols
+          daemon/build/symbols
+          dex2oat/build/symbols
     - name: Post to channel
       if: ${{ github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/master' }}
       env:
@@ -123,28 +136,11 @@ jobs:
         COMMIT_URL: ${{ github.event.head_commit.url }}
       run: |
         if [ ! -z "${{ secrets.BOT_TOKEN }}" ]; then
-          OUTPUT="core/release/"
+          OUTPUT="magisk-loader/release/"
           export riruRelease=$(find $OUTPUT -name "LSPosed-v*-riru-release.zip")
           export riruDebug=$(find $OUTPUT -name "LSPosed-v*-riru-debug.zip")
           export zygiskRelease=$(find $OUTPUT -name "LSPosed-v*-zygisk-release.zip")
           export zygiskDebug=$(find $OUTPUT -name "LSPosed-v*-zygisk-debug.zip")
           ESCAPED=`python3 -c 'import json,os,urllib.parse; msg = json.dumps(os.environ["COMMIT_MESSAGE"]); print(urllib.parse.quote(msg if len(msg) <= 1024 else json.dumps(os.environ["COMMIT_URL"])))'`
           curl -v "https://api.telegram.org/bot${BOT_TOKEN}/sendMediaGroup?chat_id=${CHANNEL_ID}&media=%5B%7B%22type%22%3A%22document%22%2C%20%22media%22%3A%22attach%3A%2F%2FriruRelease%22%7D%2C%7B%22type%22%3A%22document%22%2C%20%22media%22%3A%22attach%3A%2F%2FzygiskRelease%22%7D%2C%7B%22type%22%3A%22document%22%2C%20%22media%22%3A%22attach%3A%2F%2FriruDebug%22%7D%2C%7B%22type%22%3A%22document%22%2C%20%22media%22%3A%22attach%3A%2F%2FzygiskDebug%22%2C%22caption%22:${ESCAPED}%7D%5D" -F riruRelease="@$riruRelease" -F riruDebug="@$riruDebug" -F zygiskRelease="@$zygiskRelease" -F zygiskDebug="@$zygiskDebug"
-        fi
-    - name: Post to files
-      if: ${{ github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/master' }}
-      run: |
-        if [ ! -z "${{ secrets.FILES_REPO }}" ]; then
-          cd core/release
-          umask 077
-          REPO=$(echo ${{ secrets.FILES_REPO }} | base64 -d)
-          git init
-          git add -A
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "${{ github.sha }}"
-          git tag "files-${{ github.sha }}"
-          for file in $(ls .); do echo "::notice::Download $file from https://cdn.jsdelivr.net/gh/${REPO}@files-${{ github.sha }}/$file"; done
-          echo ${{ secrets.FILES_REPO_KEY }} | base64 --decode > deploy
-          GIT_SSH_COMMAND="ssh -i ${PWD}/deploy" git push git@github.com:${REPO}.git "files-${{ github.sha }}"
         fi

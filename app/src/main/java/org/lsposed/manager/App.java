@@ -21,12 +21,14 @@
 package org.lsposed.manager;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Looper;
 import android.os.Process;
@@ -43,6 +45,7 @@ import org.lsposed.manager.repo.RepoLoader;
 import org.lsposed.manager.ui.activity.CrashReportActivity;
 import org.lsposed.manager.util.DoHDNS;
 import org.lsposed.manager.util.ModuleUtil;
+import org.lsposed.manager.util.Telemetry;
 import org.lsposed.manager.util.ThemeUtil;
 import org.lsposed.manager.util.UpdateUtil;
 
@@ -52,6 +55,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,6 +64,7 @@ import java.util.concurrent.FutureTask;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import rikka.core.os.FileUtils;
 import rikka.material.app.DayNightDelegate;
 import rikka.material.app.LocaleDelegate;
 
@@ -71,14 +76,11 @@ public class App extends Application {
         try {
             var input = App.getInstance().getAssets().open("webview/" + name);
             var result = new ByteArrayOutputStream(1024);
-            var buffer = new byte[1024];
-            for (int length; (length = input.read(buffer)) != -1; ) {
-                result.write(buffer, 0, length);
-            }
+            FileUtils.copy(input, result);
             return result.toString(StandardCharsets.UTF_8.name());
         } catch (IOException e) {
             Log.e(App.TAG, "read webview HTML", e);
-            return "<html><body>@body@</body></html>";
+            return "<html dir\"@dir@\"><body>@body@</body></html>";
         }
     }
 
@@ -143,6 +145,28 @@ public class App extends Application {
         return !Process.isApplicationUid(Process.myUid());
     }
 
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        Telemetry.start(this);
+        var map = new HashMap<String, String>(1);
+        map.put("isParasitic", String.valueOf(isParasitic()));
+        Telemetry.trackEvent("App start", map);
+        var am = getSystemService(ActivityManager.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            map.clear();
+            var reasons = am.getHistoricalProcessExitReasons(null, 0, 1);
+            if (reasons.size() == 1) {
+                map.put("description", reasons.get(0).getDescription());
+                map.put("importance", String.valueOf(reasons.get(0).getImportance()));
+                map.put("process", reasons.get(0).getProcessName());
+                map.put("reason", String.valueOf(reasons.get(0).getReason()));
+                map.put("status", String.valueOf(reasons.get(0).getStatus()));
+                Telemetry.trackEvent("Last exit reasons", map);
+            }
+        }
+    }
+
     @SuppressLint("WrongConstant")
     private void setCrashReport() {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
@@ -187,6 +211,11 @@ public class App extends Application {
         DayNightDelegate.setApplicationContext(this);
         DayNightDelegate.setDefaultNightMode(ThemeUtil.getDarkTheme());
         LocaleDelegate.setDefaultLocale(getLocale());
+        var res = getResources();
+        var config = res.getConfiguration();
+        config.setLocale(LocaleDelegate.getDefaultLocale());
+        //noinspection deprecation
+        res.updateConfiguration(config, res.getDisplayMetrics());
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("org.lsposed.manager.NOTIFICATION");
@@ -253,11 +282,15 @@ public class App extends Application {
         return okHttpCache;
     }
 
-    public static Locale getLocale() {
-        String tag = getPreferences().getString("language", null);
+    public static Locale getLocale(String tag) {
         if (TextUtils.isEmpty(tag) || "SYSTEM".equals(tag)) {
-            return Locale.getDefault();
+            return LocaleDelegate.getSystemLocale();
         }
         return Locale.forLanguageTag(tag);
+    }
+
+    public static Locale getLocale() {
+        String tag = getPreferences().getString("language", null);
+        return getLocale(tag);
     }
 }
