@@ -34,6 +34,8 @@
     <string name="module_repo">Opslagplaats</string>
     <string name="module_repo_loading">Laden…</string>
     <string name="module_repo_up_to_date">Alle modules zijn up-to-date</string>
+    <string name="module_repo_published_time">Gepubliceerd op %s</string>
+    <string name="module_repo_updated_time">Bijgewerkt op %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d module te upgraden</item>
         <item quantity="other">%d modules te upgraden</item>
@@ -62,10 +64,14 @@
     <string name="info_device">Apparaat</string>
     <string name="info_system_abi">Systeem ABI</string>
     <string name="info_api">Injectie interface</string>
-    <string name="info_dex2oat_wrapper">Optimizer Wrapper</string>
+    <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
     <string name="supported">Ondersteund</string>
-    <string name="unsupported_android_version">Unsupported (Android versie onbevredigd)</string>
-    <string name="unsupported_crashed">Niet ondersteund (gecrasht)</string>
+    <string name="unsupported">Niet-ondersteunde</string>
+    <string name="android_version_unsatisfied">Android versie onbevredigd</string>
+    <string name="crashed">Crashed</string>
+    <string name="mount_failed">Berg mislukt</string>
+    <string name="selinux_permissive">SELinux is permissief</string>
+    <string name="sepolicy_incorrect">SELinux beleid is onjuist</string>
     <string name="parasitic_recommend">Parasitaire manager aanbevolen</string>
     <string name="parasitic_recommend_summary">LSPosed ondersteunt nu parasitisering van het systeem om detectie te voorkomen. U kunt de manager veilig deïnstalleren na het maken van een snelkoppeling van de parastische manager. In elk geval kunt u de manager installeren vanuit /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Snelkoppeling maken</string>
@@ -76,6 +82,7 @@
     <string name="menuSaveToSd">Opslaan</string>
     <string name="nav_item_logs_verbose">Uitgebreide logs</string>
     <string name="nav_item_logs_module">Modules Logbestanden</string>
+    <string name="logs_saved">Opgeslagen logboeken</string>
     <string name="logs_save_failed2">Opslaan mislukt:\n%s</string>
     <string name="menuClearLog">Wis het logboek nu</string>
     <string name="logs_cleared">Log succesvol gewist.</string>
@@ -227,4 +234,8 @@
     <string name="color_deep_orange">Diep oranje</string>
     <string name="color_brown">Bruin</string>
     <string name="color_blue_grey">Blauw grijs</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d download</item>
+        <item quantity="other">%d downloads</item>
+    </plurals>
 </resources>

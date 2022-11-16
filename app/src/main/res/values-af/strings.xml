@@ -33,10 +33,12 @@
     <string name="report_issue">Rapporteer probleem</string>
     <string name="module_repo">Bewaarplek</string>
     <string name="module_repo_loading">Laai…</string>
-    <string name="module_repo_up_to_date">%d modules enabled</string>
+    <string name="module_repo_up_to_date">Alle modules op datum</string>
+    <string name="module_repo_published_time">Published at %s</string>
+    <string name="module_repo_updated_time">Opgedateer op %s</string>
     <plurals name="module_repo_upgradable">
-        <item quantity="one">%d module enabled</item>
-        <item quantity="other">%d modules enabled</item>
+        <item quantity="one">%d module opgradeerbaar</item>
+        <item quantity="other">%d modules opgradeerbaar</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[Bekyk bronkode by %1$s<br/>Sluit aan by ons %2$s -kanaal]]></string>
     <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">nul</string>
@@ -62,10 +64,14 @@
     <string name="info_device">Toestel</string>
     <string name="info_system_abi">Stelsel ABI</string>
     <string name="info_api">Inspuitingskoppelvlak</string>
-    <string name="info_dex2oat_wrapper">Optimaliseerder-omhulsel</string>
+    <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
     <string name="supported">Ondersteun</string>
-    <string name="unsupported_android_version">Nie ondersteun nie (Android-weergawe is nie tevrede nie)</string>
-    <string name="unsupported_crashed">Ongesteun (Omgeval)</string>
+    <string name="unsupported">Ongesteun</string>
+    <string name="android_version_unsatisfied">Android-weergawe nie tevrede nie</string>
+    <string name="crashed">Het neergestort</string>
+    <string name="mount_failed">Montering het misluk</string>
+    <string name="selinux_permissive">SELinux is permissief</string>
+    <string name="sepolicy_incorrect">SELinux-beleid is verkeerd</string>
     <string name="parasitic_recommend">Parasitiese Bestuurder Aanbeveel</string>
     <string name="parasitic_recommend_summary">LSPosed ondersteun nou stelselparasitering om opsporing te vermy. U kan die bestuurder veilig deïnstalleer nadat u \'n kortpad van die parasitiese bestuurder suksesvol geskep het. In elk geval kan jy die bestuurder terug installeer vanaf /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Skep kortpad</string>
@@ -76,6 +82,7 @@
     <string name="menuSaveToSd">Stoor</string>
     <string name="nav_item_logs_verbose">Uitgebreide logs</string>
     <string name="nav_item_logs_module">Modules</string>
+    <string name="logs_saved">Logs gestoor</string>
     <string name="logs_save_failed2">Kon nie stoor nie:\n%s</string>
     <string name="menuClearLog">Vee logboek nou uit</string>
     <string name="logs_cleared">Log is suksesvol uitgevee.</string>
@@ -86,7 +93,7 @@
     <string name="menuReload">Herlaai</string>
     <string name="logs_clear_failed_2">Kon nie die logboek skoonmaak nie</string>
     <string name="menu_enable_word_wrap">Woordomhulsel</string>
-    <string name="enabled_verbose_log">%d module enabled</string>
+    <string name="enabled_verbose_log">Uitgebreide logboek geaktiveer</string>
     <string name="disabled_verbose_log">Uitgebreide logboek gedeaktiveer</string>
     <!-- ModulesActivity -->
     <string name="module_empty_description">(geen beskrywing verskaf nie)</string>
@@ -227,4 +234,8 @@
     <string name="color_deep_orange">Diep oranje</string>
     <string name="color_brown">Bruin</string>
     <string name="color_blue_grey">Blou grys</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d aflaai</item>
+        <item quantity="other">%d aflaaie</item>
+    </plurals>
 </resources>

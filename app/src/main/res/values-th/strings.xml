@@ -33,11 +33,13 @@
     <string name="module_repo">ที่เก็บ</string>
     <string name="module_repo_loading">กำลังโหลด…</string>
     <string name="module_repo_up_to_date">โมดูลทั้งหมดเป็นปัจจุบัน</string>
+    <string name="module_repo_published_time">เผยแพร่เมื่อ %s</string>
+    <string name="module_repo_updated_time">อัปเดตเมื่อ %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="other">%d โมดูลที่สามารถอัพเกรดได้</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[ดูซอร์สโค้ดได้ที่ %1$s<br/>เข้าร่วม %2$s ช่องของเรา]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">โมฆะ</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">와타나, Eifsy Popay</string>
     <string name="install">ติดตั้ง</string>
     <string name="install_summary">แตะเพื่อติดตั้งLSPosed</string>
     <string name="not_installed">ไม่ได้ติดตั้ง</string>
@@ -60,10 +62,14 @@
     <string name="info_device">อุปกรณ์</string>
     <string name="info_system_abi">ระบบ ABI</string>
     <string name="info_api">ส่วนต่อประสานการฉีด</string>
-    <string name="info_dex2oat_wrapper">Wrapper ของเครื่องมือเพิ่มประสิทธิภาพ</string>
+    <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
     <string name="supported">ได้รับการสนับสนุน</string>
-    <string name="unsupported_android_version">ไม่รองรับ (เวอร์ชัน Android ปัจจุบัน)</string>
-    <string name="unsupported_crashed">ไม่รองรับ (ขัดข้อง)</string>
+    <string name="unsupported">ไม่รองรับ</string>
+    <string name="android_version_unsatisfied">เวอร์ชัน Android ไม่พอใจ</string>
+    <string name="crashed">พัง</string>
+    <string name="mount_failed">เมานต์ล้มเหลว</string>
+    <string name="selinux_permissive">SELinux ได้รับอนุญาต</string>
+    <string name="sepolicy_incorrect">นโยบาย SELinux ไม่ถูกต้อง</string>
     <string name="parasitic_recommend">แนะนำ กำจัดไวรัส</string>
     <string name="parasitic_recommend_summary">ตอนนี้ LSPosed รองรับการทำให้เป็นกาฝากของระบบเพื่อหลีกเลี่ยงการตรวจจับ คุณสามารถถอนการติดตั้งตัวจัดการได้อย่างปลอดภัยหลังจากสร้างทางลัดของตัวจัดการปรสิตเรียบร้อยแล้ว ไม่ว่าในกรณีใด คุณสามารถติดตั้งตัวจัดการกลับจาก /data/adb/lspd/manager.apk</string>
     <string name="create_shortcut">สร้างทางลัด</string>
@@ -74,6 +80,7 @@
     <string name="menuSaveToSd">บันทึก</string>
     <string name="nav_item_logs_verbose">บันทึกอย่างละเอียด</string>
     <string name="nav_item_logs_module">บันทึกโมดูล</string>
+    <string name="logs_saved">บันทึกบันทึกแล้ว</string>
     <string name="logs_save_failed2">ไม่สามารถบันทึก:\n%s</string>
     <string name="menuClearLog">ล้างบันทึกตอนนี้</string>
     <string name="logs_cleared">ล้างบันทึกเรียบร้อยแล้ว</string>
@@ -225,4 +232,7 @@
     <string name="color_deep_orange">ส้มเข้ม</string>
     <string name="color_brown">สีน้ำตาล</string>
     <string name="color_blue_grey">น้ำเงินเทา</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="other">%d ดาวน์โหลด</item>
+    </plurals>
 </resources>

@@ -34,6 +34,8 @@
     <string name="module_repo">Depo</string>
     <string name="module_repo_loading">Barkirin…</string>
     <string name="module_repo_up_to_date">Hemî modulên nûjen</string>
+    <string name="module_repo_published_time">Di %sde hate weşandin</string>
+    <string name="module_repo_updated_time">Di %sde hate nûve kirin</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d module nûvekirin</item>
         <item quantity="other">%d modulên nûvekirî</item>
@@ -62,10 +64,14 @@
     <string name="info_device">Sazî</string>
     <string name="info_system_abi">Pergala ABI</string>
     <string name="info_api">Interface derzîlêdanê</string>
-    <string name="info_dex2oat_wrapper">Optimizer Wrapper</string>
+    <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
     <string name="supported">Piştgirî kirin</string>
-    <string name="unsupported_android_version">Ne piştgirî (guhertoya Android-ê ne razî ye)</string>
-    <string name="unsupported_crashed">Ne piştgirî (Xezaket)</string>
+    <string name="unsupported">Piştgirî nekirin</string>
+    <string name="android_version_unsatisfied">Guhertoya Android-ê ne razî ye</string>
+    <string name="crashed">Qeza kirin</string>
+    <string name="mount_failed">Çiya têk çû</string>
+    <string name="selinux_permissive">SELinux destûr e</string>
+    <string name="sepolicy_incorrect">Siyaseta SELinux nerast e</string>
     <string name="parasitic_recommend">Rêvebirê Parazît Pêşniyar kirin</string>
     <string name="parasitic_recommend_summary">LSPosed naha parazîtkirina pergalê piştgirî dike da ku ji tespîtê dûr bixe. Piştî ku hûn bi serfirazî kurtebirek rêveberê parazît biafirînin, hûn dikarin bi ewlehî rêveberê rakin. Di her rewşê de hûn dikarin rêveberê ji /data/adb/lspd/manager.apk vegere saz bikin.</string>
     <string name="create_shortcut">Kurtenivîsê çêbikin</string>
@@ -76,6 +82,7 @@
     <string name="menuSaveToSd">Rizgarkirin</string>
     <string name="nav_item_logs_verbose">Têketinên Verbose</string>
     <string name="nav_item_logs_module">Têketinên Modulan</string>
+    <string name="logs_saved">Têketin xilas kirin</string>
     <string name="logs_save_failed2">Sazkirin bi ser neket:\n%s</string>
     <string name="menuClearLog">Naha têketinê paqij bike</string>
     <string name="logs_cleared">Têketin bi serkeftî hate paqij kirin.</string>
@@ -227,4 +234,8 @@
     <string name="color_deep_orange">porteqala kûr</string>
     <string name="color_brown">qehweyî</string>
     <string name="color_blue_grey">Şîn gewr</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d download</item>
+        <item quantity="other">%d downloads</item>
+    </plurals>
 </resources>

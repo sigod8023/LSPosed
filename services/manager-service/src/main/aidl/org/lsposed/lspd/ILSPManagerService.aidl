@@ -1,14 +1,20 @@
 package org.lsposed.lspd;
 
-import io.github.xposed.xposedservice.utils.ParceledListSlice;
+import rikka.parcelablelist.ParcelableListSlice;
 import org.lsposed.lspd.models.UserInfo;
 import org.lsposed.lspd.models.Application;
 
 
 interface ILSPManagerService {
+    const int DEX2OAT_OK = 0;
+    const int DEX2OAT_CRASHED = 1;
+    const int DEX2OAT_MOUNT_FAILED = 2;
+    const int DEX2OAT_SELINUX_PERMISSIVE = 3;
+    const int DEX2OAT_SEPOLICY_INCORRECT = 4;
+
     String getApi() = 1;
 
-    ParceledListSlice<PackageInfo> getInstalledPackagesFromAllUsers(int flags, boolean filterNoProcess) = 2;
+    ParcelableListSlice<PackageInfo> getInstalledPackagesFromAllUsers(int flags, boolean filterNoProcess) = 2;
 
     String[] enabledModules() = 3;
 
@@ -54,7 +60,7 @@ interface ILSPManagerService {
 
     int startActivityAsUserWithFeature(in Intent intent,  int userId) = 30;
 
-    ParceledListSlice<ResolveInfo> queryIntentActivitiesAsUser(in Intent intent, int flags, int userId) = 31;
+    ParcelableListSlice<ResolveInfo> queryIntentActivitiesAsUser(in Intent intent, int flags, int userId) = 31;
 
     boolean dex2oatFlagsLoaded() = 32;
 
@@ -80,5 +86,7 @@ interface ILSPManagerService {
 
     void setDexObfuscate(boolean enable) = 43;
 
-    boolean dex2oatWrapperAlive() = 44;
+    int getDex2OatWrapperCompatibility() = 44;
+
+    void clearApplicationProfileData(in String packageName) = 45;
 }

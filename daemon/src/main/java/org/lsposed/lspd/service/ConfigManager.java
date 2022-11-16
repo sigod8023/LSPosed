@@ -86,7 +86,8 @@ public class ConfigManager {
     private static ConfigManager instance = null;
 
     private final SQLiteDatabase db =
-            SQLiteDatabase.openOrCreateDatabase(ConfigFileManager.dbPath, null);
+            SQLiteDatabase.openOrCreateDatabase(ConfigFileManager.dbPath.getAbsolutePath(), null,
+                    sqLiteDatabase -> Log.w(TAG, "database corrupted"));
 
     private boolean verboseLog = true;
     private boolean dexObfuscate = false;
@@ -212,7 +213,7 @@ public class ConfigManager {
                 return false;
             }
             m.file = file;
-            cachedModule.put(m.packageName, m);
+            cachedModule.putIfAbsent(m.packageName, m);
             return true;
         }).collect(Collectors.toList());
     }
@@ -242,7 +243,7 @@ public class ConfigManager {
             miscPath = string;
         }
         try {
-            Path prefs = Paths.get(miscPath + "/prefs");
+            Path prefs = Paths.get(miscPath);
             var perms = PosixFilePermissions.fromString("rwx--x--x");
             Files.createDirectories(prefs, PosixFilePermissions.asFileAttribute(perms));
             walkFileTree(prefs, f -> SELinux.setFileContext(f.toString(), "u:object_r:magisk_file:s0"));

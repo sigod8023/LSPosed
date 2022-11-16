@@ -34,6 +34,8 @@
     <string name="module_repo">Dépôt</string>
     <string name="module_repo_loading">Chargement…</string>
     <string name="module_repo_up_to_date">Tous les modules sont à jour</string>
+    <string name="module_repo_published_time">Publié le %s</string>
+    <string name="module_repo_updated_time">Mise à jour le %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d modules évolutifs</item>
         <item quantity="other">%d modules évolutifs</item>
@@ -63,10 +65,14 @@ https://github.com/tclement0922</string>
     <string name="info_device">Périphérique</string>
     <string name="info_system_abi">Architecture du système</string>
     <string name="info_api">Interface d\'injection</string>
-    <string name="info_dex2oat_wrapper">Optimiseur de Conteneur</string>
+    <string name="info_dex2oat_wrapper">Enveloppeur Dex Optimizer</string>
     <string name="supported">Supporté</string>
-    <string name="unsupported_android_version">Non supporté (version Android non-satisfaisante)</string>
-    <string name="unsupported_crashed">Non supporté (Plantée)</string>
+    <string name="unsupported">Non supporté</string>
+    <string name="android_version_unsatisfied">Version d\'Android non satisfaisante</string>
+    <string name="crashed">Planté</string>
+    <string name="mount_failed">Échec du montage</string>
+    <string name="selinux_permissive">SELinux est permissif</string>
+    <string name="sepolicy_incorrect">La politique SELinux est incorrecte</string>
     <string name="parasitic_recommend">Gestionnaire parasitaire recommandé</string>
     <string name="parasitic_recommend_summary">LSPosed supporte maintenant la parasitation du système afin d\'éviter la détection. Vous pouvez désinstaller le gestionnaire en toute sécurité et après avoir créé un raccourci du gestionnaire parasitaire avec succès. Dans n\'importe quel cas vous pouvez installer à nouveau le gestionnaire depuis /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Créer le raccourci</string>
@@ -77,6 +83,7 @@ https://github.com/tclement0922</string>
     <string name="menuSaveToSd">Sauvegarder</string>
     <string name="nav_item_logs_verbose">Journaux détaillés</string>
     <string name="nav_item_logs_module">Journaux des modules</string>
+    <string name="logs_saved">Journaux enregistrés</string>
     <string name="logs_save_failed2">Échec de la sauvegarde :\n%s</string>
     <string name="menuClearLog">Effacer le journal maintenant</string>
     <string name="logs_cleared">Journal effacé avec succès.</string>
@@ -200,7 +207,7 @@ https://github.com/tclement0922</string>
     <string name="module_release_load_more">Afficher les anciennes versions</string>
     <string name="module_release_no_more">Pas d\’autres versions</string>
     <string name="repo_load_failed">Échec de chargement du dépôt des modules : %s</string>
-    <string name="sort_upgradable_first">Évolutif d\'abord</string>
+    <string name="sort_upgradable_first">Évolutifs en premier</string>
     <!-- CrashReportActivity -->
     <string name="version_mismatch">La version du sous système LSPosed (%1$d) ne correspond pas à celle du gestionnaire (%2$d). Merci de réinstaller LSPosed.</string>
     <string name="manager_crashed">Le gestionnaire a planté</string>
@@ -228,4 +235,8 @@ https://github.com/tclement0922</string>
     <string name="color_deep_orange">Orange foncé</string>
     <string name="color_brown">Marron</string>
     <string name="color_blue_grey">Bleu grisâtre</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d téléchargé</item>
+        <item quantity="other">%d téléchargés</item>
+    </plurals>
 </resources>

@@ -36,7 +36,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.eclipse.jgit:org.eclipse.jgit:6.1.0.202203080745-r")
+        classpath("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
     }
 }
 
@@ -50,12 +50,12 @@ val injectedPackageUid by extra(2000)
 val defaultManagerPackageName by extra("org.lsposed.manager")
 val apiCode by extra(93)
 val verCode by extra(commitCount + 4200)
-val verName by extra("1.8.2")
-val androidTargetSdkVersion by extra(32)
+val verName by extra("1.8.5")
+val androidTargetSdkVersion by extra(33)
 val androidMinSdkVersion by extra(27)
 val androidBuildToolsVersion by extra("32.0.0")
-val androidCompileSdkVersion by extra(32)
-val androidCompileNdkVersion by extra("24.0.8215888")
+val androidCompileSdkVersion by extra(33)
+val androidCompileNdkVersion by extra("25.1.8937393")
 val androidSourceCompatibility by extra(JavaVersion.VERSION_11)
 val androidTargetCompatibility by extra(JavaVersion.VERSION_11)
 
@@ -78,6 +78,12 @@ fun Project.configureBaseExtension() {
         compileSdkVersion(androidCompileSdkVersion)
         ndkVersion = androidCompileNdkVersion
         buildToolsVersion = androidBuildToolsVersion
+
+        externalNativeBuild {
+            cmake {
+                version = "3.22.1+"
+            }
+        }
 
         defaultConfig {
             minSdk = androidMinSdkVersion
@@ -160,10 +166,9 @@ fun Project.configureBaseExtension() {
                         ).joinToString(" ")
                         arguments.addAll(
                             arrayOf(
+                                "-DCMAKE_BUILD_TYPE=Release",
                                 "-DCMAKE_CXX_FLAGS_RELEASE=$configFlags",
-                                "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=$configFlags",
                                 "-DCMAKE_C_FLAGS_RELEASE=$configFlags",
-                                "-DCMAKE_C_FLAGS_RELWITHDEBINFO=$configFlags",
                                 "-DDEBUG_SYMBOLS_PATH=${buildDir.absolutePath}/symbols",
                             )
                         )
@@ -216,11 +221,21 @@ fun Project.configureBaseExtension() {
     }
 }
 
+fun Project.configureJavaExtension() {
+    extensions.findByType(JavaPluginExtension::class.java)?.run {
+        sourceCompatibility = androidSourceCompatibility
+        targetCompatibility = androidTargetCompatibility
+    }
+}
+
 subprojects {
     plugins.withId("com.android.application") {
         configureBaseExtension()
     }
     plugins.withId("com.android.library") {
         configureBaseExtension()
+    }
+    plugins.withId("org.gradle.java-library") {
+        configureJavaExtension()
     }
 }

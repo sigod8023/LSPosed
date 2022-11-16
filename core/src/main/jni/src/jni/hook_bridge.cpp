@@ -20,7 +20,8 @@
 #include "hook_bridge.h"
 #include "native_util.h"
 #include "lsplant.hpp"
-#include "unordered_map"
+#include <absl/container/flat_hash_map.h>
+#include <memory>
 #include <shared_mutex>
 #include <set>
 
@@ -30,13 +31,11 @@ namespace {
 
 struct HookItem {
     jobject backup {nullptr};
-    jobjectArray callbacks {nullptr};
-    std::multiset<jint, std::greater<>> priorities {};
+    std::multimap<jint, jobject, std::greater<>> callbacks {};
 };
 
 std::shared_mutex hooked_lock;
-// Rehashing invalidates iterators, changes ordering between elements, and changes which buckets elements appear in, but does not invalidate pointers or references to elements.
-std::unordered_map<jmethodID, HookItem> hooked_methods;
+absl::flat_hash_map<jmethodID, std::unique_ptr<HookItem>> hooked_methods;
 
 jmethodID invoke = nullptr;
 }
@@ -65,46 +64,30 @@ LSP_DEF_NATIVE_METHOD(jboolean, HookBridge, hookMethod, jobject hookMethod,
     {
         std::shared_lock lk(hooked_lock);
         if (auto found = hooked_methods.find(target); found != hooked_methods.end()) {
-            hook_item = &found->second;
+            hook_item = found->second.get();
         }
     }
     if (!hook_item) {
         std::unique_lock lk(hooked_lock);
-        hook_item = &hooked_methods[target];
-        if (!hook_item->callbacks) {
+        if (auto &ptr = hooked_methods[target]; !ptr) {
+            ptr = std::make_unique<HookItem>();
+            hook_item = ptr.get();
             newHook = true;
-            hook_item->callbacks = (jobjectArray) env->NewGlobalRef(
-                    env->NewObjectArray(1, env->FindClass("[Ljava/lang/Object;"),
-                                        env->NewObjectArray(0, JNI_FindClass(env, "java/lang/Object"), nullptr)));
+        } else {
+            hook_item = ptr.get();
         }
     }
     if (newHook) {
-        auto init = env->GetMethodID(hooker, "<init>", "(Ljava/lang/reflect/Executable;[[Ljava/lang/Object;)V");
+        auto init = env->GetMethodID(hooker, "<init>", "(Ljava/lang/reflect/Executable;)V");
         auto callback_method = env->ToReflectedMethod(hooker, env->GetMethodID(hooker, "callback",
                                                                                "([Ljava/lang/Object;)Ljava/lang/Object;"),
                                                       false);
-        auto hooker_object = env->NewObject(hooker, init, hookMethod, hook_item->callbacks);
+        auto hooker_object = env->NewObject(hooker, init, hookMethod);
         hook_item->backup = lsplant::Hook(env, hookMethod, hooker_object, callback_method);
         env->DeleteLocalRef(hooker_object);
     }
-    env->MonitorEnter(hook_item->callbacks);
-    auto insert_point = hook_item->priorities.emplace(priority);
-    auto old_array = (jobjectArray) env->GetObjectArrayElement(hook_item->callbacks, 0);
-    auto new_array = env->NewObjectArray(static_cast<jint>(hook_item->priorities.size()), env->FindClass("java/lang/Object"), nullptr);
-    for (auto [i, current, passed] = std::make_tuple(0, hook_item->priorities.begin(), false); current != hook_item->priorities.end(); ++current, ++i) {
-        if (current == insert_point) {
-            env->SetObjectArrayElement(new_array, i, callback);
-            passed = true;
-        } else {
-            auto element = env->GetObjectArrayElement(old_array, i - passed);
-            env->SetObjectArrayElement(new_array, i, element);
-            env->DeleteLocalRef(element);
-        }
-    }
-    env->SetObjectArrayElement(hook_item->callbacks, 0, new_array);
-    env->DeleteLocalRef(old_array);
-    env->DeleteLocalRef(new_array);
-    env->MonitorExit(hook_item->callbacks);
+    JNIMonitor monitor(env, hook_item->backup);
+    hook_item->callbacks.emplace(std::make_pair(priority, env->NewGlobalRef(callback)));
     return hook_item->backup ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -114,37 +97,18 @@ LSP_DEF_NATIVE_METHOD(jboolean, HookBridge, unhookMethod, jobject hookMethod, jo
     {
         std::shared_lock lk(hooked_lock);
         if (auto found = hooked_methods.find(target); found != hooked_methods.end()) {
-            hook_item = &found->second;
+            hook_item = found->second.get();
         }
     }
     if (!hook_item) return JNI_FALSE;
-    JNIMonitor monitor(env, hook_item->callbacks);
-    auto old_array = (jobjectArray) env->GetObjectArrayElement(hook_item->callbacks, 0);
-    if (hook_item->priorities.empty()) return JNI_FALSE;
-    auto new_array = env->NewObjectArray(static_cast<jint>(hook_item->priorities.size() - 1), env->FindClass("java/lang/Object"), nullptr);
-    auto to_remove = hook_item->priorities.end();
-    for (auto [i, current, passed] = std::make_tuple(0, hook_item->priorities.begin(), false); current != hook_item->priorities.end(); ++current, ++i) {
-        auto element = env->GetObjectArrayElement(old_array, i);
-        if (env->IsSameObject(element, callback)) {
-            to_remove = current;
-            passed = true;
-        } else {
-            if (i - passed >= hook_item->priorities.size() - 1) {
-                return JNI_FALSE;
-            }
-            env->SetObjectArrayElement(new_array, i - passed, element);
+    JNIMonitor monitor(env, hook_item->backup);
+    for (auto i = hook_item->callbacks.begin(); i != hook_item->callbacks.end(); ++i) {
+        if (env->IsSameObject(i->second, callback)) {
+            hook_item->callbacks.erase(i);
+            return JNI_TRUE;
         }
-        env->DeleteLocalRef(element);
     }
-    bool removed = false;
-    if (to_remove != hook_item->priorities.end()) {
-        hook_item->priorities.erase(to_remove);
-        env->SetObjectArrayElement(hook_item->callbacks, 0, new_array);
-        removed = true;
-    }
-    env->DeleteLocalRef(old_array);
-    env->DeleteLocalRef(new_array);
-    return removed ? JNI_TRUE : JNI_FALSE;
+    return JNI_FALSE;
 }
 
 LSP_DEF_NATIVE_METHOD(jboolean, HookBridge, deoptimizeMethod, jobject hookMethod,
@@ -159,7 +123,7 @@ LSP_DEF_NATIVE_METHOD(jobject, HookBridge, invokeOriginalMethod, jobject hookMet
     {
         std::shared_lock lk(hooked_lock);
         if (auto found = hooked_methods.find(target); found != hooked_methods.end()) {
-            hook_item = &found->second;
+            hook_item = found->second.get();
         }
     }
     jobject to_call = hookMethod;
@@ -173,16 +137,40 @@ LSP_DEF_NATIVE_METHOD(jboolean, HookBridge, instanceOf, jobject object, jclass e
     return env->IsInstanceOf(object, expected_class);
 }
 
+LSP_DEF_NATIVE_METHOD(jboolean, HookBridge, setTrusted, jobject cookie) {
+    return lsplant::MakeDexFileTrusted(env, cookie);
+}
+
+LSP_DEF_NATIVE_METHOD(jobjectArray, HookBridge, callbackSnapshot, jobject method) {
+    auto target = env->FromReflectedMethod(method);
+    HookItem *hook_item = nullptr;
+    {
+        std::shared_lock lk(hooked_lock);
+        if (auto found = hooked_methods.find(target); found != hooked_methods.end()) {
+            hook_item = found->second.get();
+        }
+    }
+    if (!hook_item) return nullptr;
+    JNIMonitor monitor(env, hook_item->backup);
+    auto res = env->NewObjectArray((jsize) hook_item->callbacks.size(), env->FindClass("java/lang/Object"), nullptr);
+    for (jsize i = 0; auto callback: hook_item->callbacks) {
+        env->SetObjectArrayElement(res, i++, env->NewLocalRef(callback.second));
+    }
+    return res;
+}
+
 static JNINativeMethod gMethods[] = {
     LSP_NATIVE_METHOD(HookBridge, hookMethod, "(Ljava/lang/reflect/Executable;Ljava/lang/Class;ILjava/lang/Object;)Z"),
     LSP_NATIVE_METHOD(HookBridge, unhookMethod, "(Ljava/lang/reflect/Executable;Ljava/lang/Object;)Z"),
     LSP_NATIVE_METHOD(HookBridge, deoptimizeMethod, "(Ljava/lang/reflect/Executable;)Z"),
     LSP_NATIVE_METHOD(HookBridge, invokeOriginalMethod, "(Ljava/lang/reflect/Executable;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
     LSP_NATIVE_METHOD(HookBridge, instanceOf, "(Ljava/lang/Object;Ljava/lang/Class;)Z"),
+    LSP_NATIVE_METHOD(HookBridge, setTrusted, "(Ljava/lang/Object;)Z"),
+    LSP_NATIVE_METHOD(HookBridge, callbackSnapshot, "(Ljava/lang/reflect/Executable;)[Ljava/lang/Object;"),
 };
 
 void RegisterHookBridge(JNIEnv *env) {
-    auto method = env->FindClass("java/lang/reflect/Method");
+    jclass method = env->FindClass("java/lang/reflect/Method");
     invoke = env->GetMethodID(
             method, "invoke",
             "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");

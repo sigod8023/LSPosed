@@ -26,7 +26,6 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
-import android.os.RemoteException;
 import android.os.SELinux;
 import android.os.SharedMemory;
 import android.system.ErrnoException;
@@ -134,9 +133,10 @@ public class ConfigFileManager {
             Method addAssetPath = AssetManager.class.getDeclaredMethod("addAssetPath", String.class);
             addAssetPath.setAccessible(true);
             //noinspection ConstantConditions
-            if ((int) addAssetPath.invoke(am, daemonApkPath.toString()) > 0)
+            if ((int) addAssetPath.invoke(am, daemonApkPath.toString()) > 0) {
                 //noinspection deprecation
                 res = new Resources(am, null, null);
+            }
         } catch (Throwable e) {
             Log.e(TAG, Log.getStackTraceString(e));
         }
@@ -236,7 +236,7 @@ public class ConfigFileManager {
         return logDirPath.resolve("kmsg.log").toFile();
     }
 
-    static void getLogs(ParcelFileDescriptor zipFd) throws RemoteException {
+    static void getLogs(ParcelFileDescriptor zipFd) {
         try (var os = new ZipOutputStream(new FileOutputStream(zipFd.getFileDescriptor()))) {
             var comment = String.format(Locale.ROOT, "LSPosed %s %s (%d)",
                     BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE);
@@ -260,7 +260,7 @@ public class ConfigFileManager {
             ConfigManager.getInstance().exportScopes(os);
         } catch (Throwable e) {
             Log.w(TAG, "get log", e);
-            throw new RemoteException(Log.getStackTraceString(e));
+            throw new IllegalStateException(e);
         }
     }
 
@@ -378,10 +378,9 @@ public class ConfigFileManager {
             var signatures = ObfuscationManager.getSignatures();
             for (int i = 0; i < moduleClassNames.size(); i++) {
                 var s = moduleClassNames.get(i);
-                for (String key : signatures.keySet()) {
-                    if (s.startsWith(key)) {
-                        // value should not be null, but idk how to ignore this warning
-                        moduleClassNames.add(i, s.replace(key, signatures.get(key)));
+                for (var entry : signatures.entrySet()) {
+                    if (s.startsWith(entry.getKey())) {
+                        moduleClassNames.add(i, s.replace(entry.getKey(), entry.getValue()));
                     }
                 }
             }

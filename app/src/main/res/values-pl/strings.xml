@@ -36,6 +36,8 @@
     <string name="module_repo">Repozytorium</string>
     <string name="module_repo_loading">Ładowanie…</string>
     <string name="module_repo_up_to_date">Wszystkie moduły są aktualne</string>
+    <string name="module_repo_published_time">Opublikowano na stronie %s</string>
+    <string name="module_repo_updated_time">Aktualizacja na stronie %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d moduł możliwy do aktualizacji</item>
         <item quantity="few">%d moduły z możliwością aktualizacji</item>
@@ -66,10 +68,14 @@
     <string name="info_device">Urządzenie</string>
     <string name="info_system_abi">System ABI</string>
     <string name="info_api">Interfejs wstrzykiwania</string>
-    <string name="info_dex2oat_wrapper">Optymalizator Wrapper</string>
+    <string name="info_dex2oat_wrapper">Optymalizator Dex Optimizer Wrapper</string>
     <string name="supported">Obsługiwana strona</string>
-    <string name="unsupported_android_version">Nieobsługiwana (niezadowalająca wersja systemu Android)</string>
-    <string name="unsupported_crashed">Nieobsługiwane (zawieszone)</string>
+    <string name="unsupported">Nieobsługiwana strona</string>
+    <string name="android_version_unsatisfied">Niezadowolenie z wersji na Androida</string>
+    <string name="crashed">Rozbita</string>
+    <string name="mount_failed">Montaż nie powiódł się</string>
+    <string name="selinux_permissive">SELinux jest permisywny</string>
+    <string name="sepolicy_incorrect">Zasady SELinux są nieprawidłowe</string>
     <string name="parasitic_recommend">Rekomendowany menadżer Parasitic</string>
     <string name="parasitic_recommend_summary">LSPosed wspiera teraz pasożyty systemowe, aby uniknąć wykrycia. Możesz odinstalować menadżer po pomyśłnym utworzeniu skrótu w parastic manager. W każdym wypadku możesz zainstalować menadżer spowrotem z pliku /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Utwórz skrót</string>
@@ -80,6 +86,7 @@
     <string name="menuSaveToSd">Zapisz</string>
     <string name="nav_item_logs_verbose">Logi verbose</string>
     <string name="nav_item_logs_module">Logi modułów</string>
+    <string name="logs_saved">Zapisane dzienniki</string>
     <string name="logs_save_failed2">Nie udało się zapisać:\n%s</string>
     <string name="menuClearLog">Wyczyść log teraz</string>
     <string name="logs_cleared">Logi zostały pomyślnie wyczyszczone.</string>
@@ -231,4 +238,10 @@
     <string name="color_deep_orange">Ciemny pomarańczowy</string>
     <string name="color_brown">Brązowy</string>
     <string name="color_blue_grey">Niebiesko szary</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d pobierz</item>
+        <item quantity="few">%d pobieranie</item>
+        <item quantity="many">%d pobieranie</item>
+        <item quantity="other">%d pobrania</item>
+    </plurals>
 </resources>

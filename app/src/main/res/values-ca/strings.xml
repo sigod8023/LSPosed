@@ -34,12 +34,14 @@
     <string name="module_repo">Repositori</string>
     <string name="module_repo_loading">Carregant…</string>
     <string name="module_repo_up_to_date">Tots els mòduls actualitzats</string>
+    <string name="module_repo_published_time">Published at %s</string>
+    <string name="module_repo_updated_time">Actualitzat a les %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d mòdul actualitzable</item>
         <item quantity="other">%d mòduls actualitzables</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[Veure codi font a %1$s<br/>Uneix-te al nostre %2$s canal]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">Frederic Blay,  Ghost Face, Yannick Kamin</string>
     <string name="install">Instalar</string>
     <string name="install_summary">Toca per instal·lar LSPosed</string>
     <string name="not_installed">No instalat</string>
@@ -62,10 +64,14 @@
     <string name="info_device">Dispositiu</string>
     <string name="info_system_abi">Sistema ABI</string>
     <string name="info_api">Interfície d\'injecció</string>
-    <string name="info_dex2oat_wrapper">Embolcall de l\'optimitzador</string>
+    <string name="info_dex2oat_wrapper">Embolcall de Dex Optimizer</string>
     <string name="supported">Admet</string>
-    <string name="unsupported_android_version">No és compatible (la versió d\'Android no està satisfeta)</string>
-    <string name="unsupported_crashed">No s\'admet (bloquejat)</string>
+    <string name="unsupported">Sense suport</string>
+    <string name="android_version_unsatisfied">La versió d\'Android no està satisfeta</string>
+    <string name="crashed">Estavellat</string>
+    <string name="mount_failed">El muntatge ha fallat</string>
+    <string name="selinux_permissive">SELinux és permissiu</string>
+    <string name="sepolicy_incorrect">La política de SELinux és incorrecta</string>
     <string name="parasitic_recommend">Administrador de paràsits recomanat</string>
     <string name="parasitic_recommend_summary">LSPosed ara admet la parasitització del sistema per evitar la detecció. Podeu desinstal·lar el gestor amb seguretat després de crear correctament una drecera del gestor de paràsits. En qualsevol cas, podeu tornar a instal·lar el gestor des de /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Crear accès directe</string>
@@ -76,6 +82,7 @@
     <string name="menuSaveToSd">Desa</string>
     <string name="nav_item_logs_verbose">Registres detallats</string>
     <string name="nav_item_logs_module">Registres de mòduls</string>
+    <string name="logs_saved">Registres guardats</string>
     <string name="logs_save_failed2">No s\'ha pogut desar:\n%s</string>
     <string name="menuClearLog">Esborra el registre ara</string>
     <string name="logs_cleared">El registre s\'ha esborrat correctament.</string>
@@ -227,4 +234,8 @@
     <string name="color_deep_orange">Taronja profund</string>
     <string name="color_brown">marró</string>
     <string name="color_blue_grey">Gris blau</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d descàrrega</item>
+        <item quantity="other">%d descàrregues</item>
+    </plurals>
 </resources>

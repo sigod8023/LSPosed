@@ -19,7 +19,8 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
-    <string name="info">তথ্য</string>
+    <string name="info">তথ্য
+প্রধানকার্যকলাপ</string>
     <string name="overview">ওভারভিউ</string>
     <string name="Modules">মডিউল</string>
     <plurals name="modules_enabled_count">
@@ -34,12 +35,14 @@
     <string name="module_repo">ভান্ডার</string>
     <string name="module_repo_loading">লোড হচ্ছে…</string>
     <string name="module_repo_up_to_date">সব মডিউল আপ টু ডেট</string>
+    <string name="module_repo_published_time">%sএ প্রকাশিত</string>
+    <string name="module_repo_updated_time">মডিউল_রিপো_হালনাগাদের_সময়</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d মডিউল আপগ্রেডযোগ্য</item>
         <item quantity="other">%d মডিউল আপগ্রেডযোগ্য</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[%1$s<br/>এ সোর্স কোড দেখুন আমাদের %2$s চ্যানেলে যোগ দিন]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">শূন্য</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">bdtipsntricks</string>
     <string name="install">ইনস্টল করুন</string>
     <string name="install_summary">LSPosed ইনস্টল করতে আলতো চাপুন</string>
     <string name="not_installed">ইনস্টল করা না</string>
@@ -62,10 +65,14 @@
     <string name="info_device">যন্ত্র</string>
     <string name="info_system_abi">সিস্টেম ABI</string>
     <string name="info_api">ইনজেকশন ইন্টারফেস</string>
-    <string name="info_dex2oat_wrapper">অপ্টিমাইজার মোড়ক</string>
+    <string name="info_dex2oat_wrapper">ডেক্স অপ্টিমাইজার মোড়ক</string>
     <string name="supported">সমর্থিত</string>
-    <string name="unsupported_android_version">অসমর্থিত (অ্যান্ড্রয়েড সংস্করণ অসন্তুষ্ট)</string>
-    <string name="unsupported_crashed">অসমর্থিত (ক্র্যাশ)</string>
+    <string name="unsupported">অসমর্থিত</string>
+    <string name="android_version_unsatisfied">অ্যান্ড্রয়েড সংস্করণ অসন্তুষ্ট</string>
+    <string name="crashed">বিধ্বস্ত</string>
+    <string name="mount_failed">মাউন্ট ব্যর্থ হয়েছে</string>
+    <string name="selinux_permissive">SELinux অনুমোদিত</string>
+    <string name="sepolicy_incorrect">SELinux নীতি ভুল</string>
     <string name="parasitic_recommend">পরজীবী ব্যবস্থাপক প্রস্তাবিত</string>
     <string name="parasitic_recommend_summary">LSPosed এখন সনাক্তকরণ এড়াতে সিস্টেম প্যারাসাইটাইজেশন সমর্থন করে। সফলভাবে পরজীবী ম্যানেজারের একটি শর্টকাট তৈরি করার পরে আপনি নিরাপদে ম্যানেজারটিকে আনইনস্টল করতে পারেন। যাই হোক না কেন আপনি /data/adb/lspd/manager.apk থেকে ম্যানেজারটি আবার ইনস্টল করতে পারেন।</string>
     <string name="create_shortcut">শর্টকাট তৈরি করুন</string>
@@ -76,6 +83,7 @@
     <string name="menuSaveToSd">সংরক্ষণ</string>
     <string name="nav_item_logs_verbose">ভার্বোস লগ</string>
     <string name="nav_item_logs_module">মডিউল লগ</string>
+    <string name="logs_saved">লগ সংরক্ষিত</string>
     <string name="logs_save_failed2">সংরক্ষণ করতে ব্যর্থ হয়েছে:\n%s</string>
     <string name="menuClearLog">এখন লগ সাফ করুন</string>
     <string name="logs_cleared">লগ সফলভাবে সাফ করা হয়েছে৷</string>
@@ -227,4 +235,8 @@
     <string name="color_deep_orange">গভীর কমলা</string>
     <string name="color_brown">বাদামী</string>
     <string name="color_blue_grey">নীল ধূসর</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d ডাউনলোড</item>
+        <item quantity="other">%d ডাউনলোড</item>
+    </plurals>
 </resources>

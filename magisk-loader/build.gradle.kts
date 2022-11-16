@@ -108,10 +108,11 @@ android {
             }
         }
     }
+    namespace = "org.lsposed.lspd"
 }
 
 dependencies {
-    compileOnly("androidx.annotation:annotation:1.3.0")
+    compileOnly("androidx.annotation:annotation:1.5.0")
     compileOnly(projects.hiddenapi.stubs)
     implementation(projects.core)
     implementation(projects.hiddenapi.bridge)
@@ -120,11 +121,9 @@ dependencies {
 }
 
 val zipAll = task("zipAll") {
+    group = "LSPosed"
 
 }
-
-val apkDir: String
-    get() = if (rootProject.extra.properties["android.injected.invoked.from.ide"] == "true") "intermediates" else "outputs"
 
 fun afterEval() = android.applicationVariants.forEach { variant ->
     val variantCapped = variant.name.capitalize(Locale.ROOT)
@@ -140,6 +139,7 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
     val zipFileName = "$moduleName-v$verName-$verCode-${flavorLowered}-$buildTypeLowered.zip"
 
     val prepareMagiskFilesTask = task<Sync>("prepareMagiskFiles$variantCapped") {
+        group = "LSPosed"
         dependsOn(
             "assemble$variantCapped",
             ":app:package$buildTypeCapped",
@@ -199,11 +199,8 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
             rename(".*\\.apk", "daemon.apk")
         }
         into("lib") {
-            from("${buildDir}/intermediates/cmake/$variantCapped/obj") {
+            from("${buildDir}/intermediates/stripped_native_libs/$variantCapped/out/lib") {
                 include("**/liblspd.so")
-            }
-            from("${project(":daemon").buildDir}/intermediates/cmake/$buildTypeLowered/obj") {
-                include("**/libdaemon.so")
             }
         }
         into("bin") {
@@ -231,6 +228,7 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
     }
 
     val zipTask = task<Zip>("zip${variantCapped}") {
+        group = "LSPosed"
         dependsOn(prepareMagiskFilesTask)
         archiveFileName.set(zipFileName)
         destinationDirectory.set(file("$projectDir/release"))
@@ -241,11 +239,13 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
 
     val adb: String = androidComponents.sdkComponents.adb.get().asFile.absolutePath
     val pushTask = task<Exec>("push${variantCapped}") {
+        group = "LSPosed"
         dependsOn(zipTask)
         workingDir("${projectDir}/release")
         commandLine(adb, "push", zipFileName, "/data/local/tmp/")
     }
     val flashTask = task<Exec>("flash${variantCapped}") {
+        group = "LSPosed"
         dependsOn(pushTask)
         commandLine(
             adb, "shell", "su", "-c",
@@ -253,6 +253,7 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
         )
     }
     task<Exec>("flashAndReboot${variantCapped}") {
+        group = "LSPosed"
         dependsOn(flashTask)
         commandLine(adb, "shell", "reboot")
     }
@@ -264,15 +265,18 @@ afterEvaluate {
 
 val adb: String = androidComponents.sdkComponents.adb.get().asFile.absolutePath
 val killLspd = task<Exec>("killLspd") {
+    group = "LSPosed"
     commandLine(adb, "shell", "su", "-c", "killall", "lspd")
     isIgnoreExitValue = true
 }
 val pushDaemon = task<Exec>("pushDaemon") {
+    group = "LSPosed"
     dependsOn(":daemon:assembleDebug")
-    workingDir("${project(":daemon").buildDir}/$apkDir/apk/debug")
+    workingDir("${project(":daemon").buildDir}/outputs/apk/debug")
     commandLine(adb, "push", "daemon-debug.apk", "/data/local/tmp/daemon.apk")
 }
 val pushDaemonNative = task<Exec>("pushDaemonNative") {
+    group = "LSPosed"
     dependsOn(":daemon:assembleDebug")
     doFirst {
         val abi: String = ByteArrayOutputStream().use { outputStream ->
@@ -282,11 +286,12 @@ val pushDaemonNative = task<Exec>("pushDaemonNative") {
             }
             outputStream.toString().trim()
         }
-        workingDir("${project(":daemon").buildDir}/intermediates/cmake/debug/obj/$abi")
+        workingDir("${project(":daemon").buildDir}/intermediates/stripped_native_libs/debug/out/lib/$abi")
     }
     commandLine(adb, "push", "libdaemon.so", "/data/local/tmp/libdaemon.so")
 }
 val reRunDaemon = task<Exec>("reRunDaemon") {
+    group = "LSPosed"
     dependsOn(pushDaemon, pushDaemonNative, killLspd)
     // tricky to pass a minus number to avoid the injection warning
     commandLine(
@@ -301,11 +306,13 @@ val reRunDaemon = task<Exec>("reRunDaemon") {
 }
 val tmpApk = "/data/local/tmp/lsp.apk"
 val pushApk = task<Exec>("pushApk") {
+    group = "LSPosed"
     dependsOn(":app:assembleDebug")
-    workingDir("${project(":app").buildDir}/$apkDir/apk/debug")
+    workingDir("${project(":app").buildDir}/outputs/apk/debug")
     commandLine(adb, "push", "app-debug.apk", tmpApk)
 }
 val openApp = task<Exec>("openApp") {
+    group = "LSPosed"
     commandLine(
         adb,
         "shell",
@@ -319,6 +326,7 @@ val openApp = task<Exec>("openApp") {
     )
 }
 task<Exec>("reRunApp") {
+    group = "LSPosed"
     dependsOn(pushApk)
     commandLine(adb, "shell", "su", "-c", "mv -f $tmpApk /data/adb/lspd/manager.apk")
     isIgnoreExitValue = true

@@ -20,6 +20,7 @@
 package org.lsposed.manager.ui.fragment;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -27,7 +28,10 @@ import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.format.Formatter;
 import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -38,6 +42,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ArrayAdapter;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -77,6 +82,10 @@ import org.lsposed.manager.util.chrome.CustomTabsURLSpan;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -147,7 +156,6 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
             var setting = view.getSettings();
             setting.setOffscreenPreRaster(true);
             setting.setDomStorageEnabled(true);
-            setting.setAppCacheEnabled(true);
             setting.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
             setting.setAllowContentAccess(false);
             setting.setAllowFileAccessFromFileURLs(true);
@@ -232,10 +240,11 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
     @Override
     public void onModuleReleasesLoaded(OnlineModule module) {
         this.module = module;
+        var repoLoader = RepoLoader.getInstance();
         if (releaseAdapter != null) {
             runAsync(releaseAdapter::loadItems);
         }
-        if (module.getReleases().size() == 1) {
+        if ((repoLoader.getReleases(module.getName()) != null ? repoLoader.getReleases(module.getName()).size() : 1) == 1) {
             showHint(R.string.module_release_no_more, true);
         }
     }
@@ -279,13 +288,16 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
                 holder.title.setText(R.string.module_information_homepage);
                 holder.description.setText(module.getHomepageUrl());
             } else if (position == collaboratorsRow) {
-                holder.title.setText(R.string.module_information_collaborators);
                 List<Collaborator> collaborators = module.getCollaborators();
+                if (collaborators == null) return;
+                holder.title.setText(R.string.module_information_collaborators);
                 SpannableStringBuilder sb = new SpannableStringBuilder();
                 ListIterator<Collaborator> iterator = collaborators.listIterator();
                 while (iterator.hasNext()) {
                     Collaborator collaborator = iterator.next();
-                    String name = collaborator.getName() == null ? collaborator.getLogin() : collaborator.getName();
+                    var collaboratorLogin = collaborator.getLogin();
+                    if (collaboratorLogin == null) continue;
+                    String name = collaborator.getName() == null ? collaboratorLogin : collaborator.getName();
                     sb.append(name);
                     CustomTabsURLSpan span = new CustomTabsURLSpan(requireActivity(), String.format("https://github.com/%s", collaborator.getLogin()));
                     sb.setSpan(span, sb.length() - name.length(), sb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -340,16 +352,30 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
             return new BlurBehindDialogBuilder(requireActivity(), R.style.ThemeOverlay_MaterialAlertDialog_Centered_FullWidthButtons)
                     .setTitle(R.string.module_release_view_assets)
                     .setPositiveButton(android.R.string.cancel, null)
-                    .setItems(args.getCharSequenceArray("names"),
+                    .setAdapter(new ArrayAdapter<>(requireActivity(), R.layout.dialog_item, args.getCharSequenceArray("names")),
                             (dialog, which) -> NavUtil.startURL(requireActivity(), args.getStringArrayList("urls").get(which)))
                     .create();
         }
 
-        static void create(FragmentManager fm, String[] names, ArrayList<String> urls) {
+        static void create(Activity activity, FragmentManager fm, List<ReleaseAsset> assets) {
             var f = new DownloadDialog();
             var bundle = new Bundle();
-            bundle.putStringArray("names", names);
-            bundle.putStringArrayList("urls", urls);
+
+            var displayNames = new CharSequence[assets.size()];
+            for (int i = 0; i < assets.size(); i++) {
+                var sb = new SpannableStringBuilder(assets.get(i).getName());
+                var count = assets.get(i).getDownloadCount();
+                var countStr = activity.getResources().getQuantityString(R.plurals.module_release_assets_download_count, count, count);
+                var sizeStr = Formatter.formatShortFileSize(activity, assets.get(i).getSize());
+                sb.append('\n').append(sizeStr).append('/').append(countStr);
+                final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ResourceUtils.resolveColor(activity.getTheme(), android.R.attr.textColorSecondary));
+                final RelativeSizeSpan relativeSizeSpan = new RelativeSizeSpan(0.8f);
+                sb.setSpan(foregroundColorSpan, sb.length() - sizeStr.length() - countStr.length() - 1, sb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                sb.setSpan(relativeSizeSpan, sb.length() - sizeStr.length() - countStr.length() - 1, sb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                displayNames[i] = sb;
+            }
+            bundle.putCharSequenceArray("names", displayNames);
+            bundle.putStringArrayList("urls", assets.stream().map(ReleaseAsset::getDownloadUrl).collect(Collectors.toCollection(ArrayList::new)));
             f.setArguments(bundle);
             f.show(fm, "download");
         }
@@ -367,19 +393,20 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
         public void loadItems() {
             var channels = resources.getStringArray(R.array.update_channel_values);
             var channel = App.getPreferences().getString("update_channel", channels[0]);
-            var releases = module.getReleases();
+            var releases = RepoLoader.getInstance().getReleases(module.getName());
+            if (releases == null) releases = module.getReleases();
             List<Release> tmpList;
             if (channel.equals(channels[0])) {
-                tmpList = releases.parallelStream().filter(t -> {
-                    if (t.getIsPrerelease()) return false;
-                    var name = t.getName().toLowerCase(LocaleDelegate.getDefaultLocale());
-                    return !name.startsWith("snapshot") && !name.startsWith("nightly");
-                }).collect(Collectors.toList());
+                tmpList = releases != null ? releases.parallelStream().filter(t -> {
+                    if (Boolean.TRUE.equals(t.getIsPrerelease())) return false;
+                    var name = t.getName() != null ? t.getName().toLowerCase(LocaleDelegate.getDefaultLocale()) : null;
+                    return !(name != null && name.startsWith("snapshot")) && !(name != null && name.startsWith("nightly"));
+                }).collect(Collectors.toList()) : null;
             } else if (channel.equals(channels[1])) {
-                tmpList = releases.parallelStream().filter(t -> {
-                    var name = t.getName().toLowerCase(LocaleDelegate.getDefaultLocale());
-                    return !name.startsWith("snapshot") && !name.startsWith("nightly");
-                }).collect(Collectors.toList());
+                tmpList = releases != null ? releases.parallelStream().filter(t -> {
+                    var name = t.getName() != null ? t.getName().toLowerCase(LocaleDelegate.getDefaultLocale()) : null;
+                    return !(name != null && name.startsWith("snapshot")) && !(name != null && name.startsWith("nightly"));
+                }).collect(Collectors.toList()) : null;
             } else tmpList = releases;
             runOnUiThread(() -> {
                 items = tmpList;
@@ -412,15 +439,15 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
             } else {
                 Release release = items.get(position);
                 holder.title.setText(release.getName());
+                var instant = Instant.parse(release.getPublishedAt());
+                var formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+                        .withLocale(App.getLocale()).withZone(ZoneId.systemDefault());
+                holder.publishedTime.setText(String.format(getString(R.string.module_repo_published_time), formatter.format(instant)));
                 renderGithubMarkdown(holder.description, release.getDescriptionHTML());
                 holder.openInBrowser.setOnClickListener(v -> NavUtil.startURL(requireActivity(), release.getUrl()));
                 List<ReleaseAsset> assets = release.getReleaseAssets();
                 if (assets != null && !assets.isEmpty()) {
-                    holder.viewAssets.setOnClickListener(v -> {
-                        ArrayList<String> names = new ArrayList<>();
-                        assets.forEach(releaseAsset -> names.add(releaseAsset.getName()));
-                        DownloadDialog.create(getChildFragmentManager(), names.toArray(new String[0]), assets.stream().map(ReleaseAsset::getDownloadUrl).collect(Collectors.toCollection(ArrayList::new)));
-                    });
+                    holder.viewAssets.setOnClickListener(v -> DownloadDialog.create(requireActivity(), getParentFragmentManager(), assets));
                 } else {
                     holder.viewAssets.setVisibility(View.GONE);
                 }
@@ -444,6 +471,7 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
 
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView title;
+            TextView publishedTime;
             WebView description;
             MaterialButton openInBrowser;
             MaterialButton viewAssets;
@@ -458,6 +486,7 @@ public class RepoItemFragment extends BaseFragment implements RepoLoader.RepoLis
             public ReleaseViewHolder(ItemRepoReleaseBinding binding) {
                 super(binding.getRoot());
                 title = binding.title;
+                publishedTime = binding.publishedTime;
                 description = binding.description;
                 openInBrowser = binding.openInBrowser;
                 viewAssets = binding.viewAssets;

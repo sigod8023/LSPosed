@@ -22,11 +22,10 @@
 #include <linux/fs.h>
 #include <sys/mman.h>
 
-#include "ConfigImpl.h"
+#include "config_impl.h"
 #include "elf_util.h"
 #include "loader.h"
 #include "magisk_loader.h"
-#include "native_hook.h"
 #include "native_util.h"
 #include "service.h"
 #include "symbol_cache.h"
@@ -129,11 +128,14 @@ namespace lspd {
                         return UnhookFunction(t) == RT_SUCCESS ;
                     },
                     .art_symbol_resolver = [](auto symbol) {
-                        return GetArt()->getSymbAddress<void*>(symbol);
+                        return GetArt()->getSymbAddress(symbol);
+                    },
+                    .art_symbol_prefix_resolver = [](auto symbol) {
+                        return GetArt()->getSymbPrefixFirstAddress(symbol);
                     },
                 };
-                InstallInlineHooks(env, initInfo);
-                InitHooks(env, initInfo);
+                InitArtHooker(env, initInfo);
+                InitHooks(env);
                 SetupEntryClass(env);
                 FindAndCall(env, "forkCommon",
                             "(ZLjava/lang/String;Landroid/os/IBinder;)V",
@@ -201,16 +203,19 @@ namespace lspd {
                         return UnhookFunction(t) == RT_SUCCESS;
                     },
                     .art_symbol_resolver = [](auto symbol){
-                        return GetArt()->getSymbAddress<void*>(symbol);
+                        return GetArt()->getSymbAddress(symbol);
+                    },
+                    .art_symbol_prefix_resolver = [](auto symbol) {
+                        return GetArt()->getSymbPrefixFirstAddress(symbol);
                     },
             };
-            InstallInlineHooks(env, initInfo);
             auto [dex_fd, size] = instance->RequestLSPDex(env, binder);
             auto obfs_map = instance->RequestObfuscationMap(env, binder);
             ConfigBridge::GetInstance()->obfuscation_map(std::move(obfs_map));
             LoadDex(env, PreloadedDex(dex_fd, size));
             close(dex_fd);
-            InitHooks(env, initInfo);
+            InitArtHooker(env, initInfo);
+            InitHooks(env);
             SetupEntryClass(env);
             LOGD("Done prepare");
             FindAndCall(env, "forkCommon",

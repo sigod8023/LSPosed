@@ -21,10 +21,11 @@
 #define SANDHOOK_ELF_UTIL_H
 
 #include <string_view>
-#include <unordered_map>
+#include <map>
 #include <linux/elf.h>
 #include <sys/types.h>
 #include <link.h>
+#include <vector>
 #include "config.h"
 
 #define SHT_GNU_HASH 0x6ffffff6
@@ -35,23 +36,38 @@ namespace SandHook {
 
         ElfImg(std::string_view elf);
 
-        constexpr ElfW(Addr) getSymbOffset(std::string_view name) const {
-            return getSymbOffset(name, GnuHash(name), ElfHash(name));
-        }
-
-        constexpr ElfW(Addr) getSymbAddress(std::string_view name) const {
-            ElfW(Addr) offset = getSymbOffset(name);
+        template<typename T = void*>
+        requires(std::is_pointer_v<T>)
+        constexpr const T getSymbAddress(std::string_view name) const {
+            auto offset = getSymbOffset(name, GnuHash(name), ElfHash(name));
             if (offset > 0 && base != nullptr) {
-                return static_cast<ElfW(Addr)>((uintptr_t) base + offset - bias);
+                return reinterpret_cast<T>(static_cast<ElfW(Addr)>((uintptr_t) base + offset - bias));
             } else {
-                return 0;
+                return nullptr;
             }
         }
 
-        template<typename T>
+        template<typename T = void*>
         requires(std::is_pointer_v<T>)
-        constexpr T getSymbAddress(std::string_view name) const {
-            return reinterpret_cast<T>(getSymbAddress(name));
+        constexpr const T getSymbPrefixFirstAddress(std::string_view prefix) const {
+            auto offset = PrefixLookupFirst(prefix);
+            if (offset > 0 && base != nullptr) {
+                return reinterpret_cast<T>(static_cast<ElfW(Addr)>((uintptr_t) base + offset - bias));
+            } else {
+                return nullptr;
+            }
+        }
+
+        template<typename T = void*>
+        requires(std::is_pointer_v<T>)
+        const std::vector<T> getAllSymbAddress(std::string_view name) const {
+            auto offsets = LinearRangeLookup(name);
+            std::vector<T> res;
+            res.reserve(offsets.size());
+            for (const auto &offset : offsets) {
+                res.emplace_back(reinterpret_cast<T>(static_cast<ElfW(Addr)>((uintptr_t) base + offset - bias)));
+            }
+            return res;
         }
 
         bool isValid() const {
@@ -73,11 +89,17 @@ namespace SandHook {
 
         ElfW(Addr) LinearLookup(std::string_view name) const;
 
+        std::vector<ElfW(Addr)> LinearRangeLookup(std::string_view name) const;
+
+        ElfW(Addr) PrefixLookupFirst(std::string_view prefix) const;
+
         constexpr static uint32_t ElfHash(std::string_view name);
 
         constexpr static uint32_t GnuHash(std::string_view name);
 
         bool findModuleBase();
+
+        void MayInitLinearMap() const;
 
         std::string elf;
         void *base = nullptr;
@@ -111,7 +133,7 @@ namespace SandHook {
         uint32_t *gnu_bucket_;
         uint32_t *gnu_chain_;
 
-        mutable std::unordered_map<std::string_view, ElfW(Sym) *> symtabs_;
+        mutable std::map<std::string_view, ElfW(Sym) *> symtabs_;
     };
 
     constexpr uint32_t ElfImg::ElfHash(std::string_view name) {

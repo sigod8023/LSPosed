@@ -109,8 +109,14 @@ public class LSPosedService extends ILSPosedService.Stub {
                         isXposedModule = true;
                         broadcastAndShowNotification(moduleName, userId, intent, true);
                     }
+                // Anyway, canceled the notification
+                if (moduleName != null) LSPManagerService.cancelNotification(moduleName, userId);
                 break;
             }
+            case Intent.ACTION_PACKAGE_REMOVED:
+                // Anyway, canceled the notification
+                if (moduleName != null) LSPManagerService.cancelNotification(moduleName, userId);
+                break;
             case Intent.ACTION_PACKAGE_ADDED:
             case Intent.ACTION_PACKAGE_CHANGED: {
                 // make sure that the change is for the complete package, not only a
@@ -241,6 +247,7 @@ public class LSPosedService extends ILSPosedService.Stub {
                 @Override
                 public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered, boolean sticky, int sendingUser) {
                     getExecutorService().submit(() -> dispatchPackageChanged(intent));
+                    if (!ordered) return;
                     try {
                         ActivityManagerService.finishReceiver(this, resultCode, data, extras, false, intent.getFlags());
                     } catch (Throwable e) {
@@ -266,6 +273,7 @@ public class LSPosedService extends ILSPosedService.Stub {
                 @Override
                 public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered, boolean sticky, int sendingUser) {
                     getExecutorService().submit(() -> dispatchUserUnlocked(intent));
+                    if (!ordered) return;
                     try {
                         ActivityManagerService.finishReceiver(this, resultCode, data, extras, false, intent.getFlags());
                     } catch (Throwable e) {
@@ -288,6 +296,7 @@ public class LSPosedService extends ILSPosedService.Stub {
                 @Override
                 public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered, boolean sticky, int sendingUser) {
                     getExecutorService().submit(() -> dispatchConfigurationChanged(intent));
+                    if (!ordered) return;
                     try {
                         ActivityManagerService.finishReceiver(this, resultCode, data, extras, false, intent.getFlags());
                     } catch (Throwable e) {
@@ -312,6 +321,7 @@ public class LSPosedService extends ILSPosedService.Stub {
                 @Override
                 public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered, boolean sticky, int sendingUser) {
                     getExecutorService().submit(() -> dispatchSecretCodeReceive());
+                    if (!ordered) return;
                     try {
                         ActivityManagerService.finishReceiver(this, resultCode, data, extras, false, intent.getFlags());
                     } catch (Throwable e) {
@@ -341,6 +351,7 @@ public class LSPosedService extends ILSPosedService.Stub {
                             Log.e(TAG, "setActivityController", e);
                         }
                     });
+                    if (!ordered) return;
                     try {
                         ActivityManagerService.finishReceiver(this, resultCode, data, extras, false, intent.getFlags());
                     } catch (Throwable e) {
@@ -364,6 +375,7 @@ public class LSPosedService extends ILSPosedService.Stub {
                 @Override
                 public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered, boolean sticky, int sendingUser) {
                     getExecutorService().submit(() -> dispatchUserChanged(intent));
+                    if (!ordered) return;
                     try {
                         ActivityManagerService.finishReceiver(this, resultCode, data, extras, false, intent.getFlags());
                     } catch (Throwable e) {

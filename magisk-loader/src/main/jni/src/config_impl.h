@@ -14,15 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with LSPosed.  If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2020 EdXposed Contributors
- * Copyright (C) 2021 LSPosed Contributors
+ * Copyright (C) 2022 LSPosed Contributors
  */
 
-#pragma once
+//
+// Created by Kotori0 on 2022/4/14.
+//
 
-#include "utils/hook_helper.hpp"
+#ifndef LSPOSED_CONFIGIMPL_H
+#define LSPOSED_CONFIGIMPL_H
 
-namespace lspd {
-    void InstallInlineHooks(JNIEnv* env, const lsplant::HookHandler &handler);
+#include "config_bridge.h"
+#include "service.h"
 
-}
+class ConfigImpl: public ConfigBridge {
+public:
+    inline static void Init() {
+        instance_ = std::make_unique<ConfigImpl>();
+    }
+
+    virtual obfuscation_map_t& obfuscation_map() override { return obfuscation_map_; }
+    virtual void obfuscation_map(obfuscation_map_t m) override { obfuscation_map_ = std::move(m); }
+
+private:
+    inline static std::map<std::string, std::string> obfuscation_map_;
+};
+
+
+#endif //LSPOSED_CONFIGIMPL_H

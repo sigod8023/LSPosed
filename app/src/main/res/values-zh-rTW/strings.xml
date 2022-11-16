@@ -33,6 +33,8 @@
     <string name="module_repo">倉庫</string>
     <string name="module_repo_loading">正在載入…</string>
     <string name="module_repo_up_to_date">所有模組為最新版本</string>
+    <string name="module_repo_published_time">發佈於 %s</string>
+    <string name="module_repo_updated_time">更新於 %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="other">%d 個模組可更新</item>
     </plurals>
@@ -60,10 +62,14 @@
     <string name="info_device">裝置版本</string>
     <string name="info_system_abi">系統架構</string>
     <string name="info_api">注入介面</string>
-    <string name="info_dex2oat_wrapper">最佳化包裝</string>
+    <string name="info_dex2oat_wrapper">Dex 優化器包裝器</string>
     <string name="supported">支援</string>
-    <string name="unsupported_android_version">不支援（Android 版本不符合要求）</string>
-    <string name="unsupported_crashed">不支援（已當機）</string>
+    <string name="unsupported">不支援</string>
+    <string name="android_version_unsatisfied">系統版本不受支援</string>
+    <string name="crashed">當機</string>
+    <string name="mount_failed">掛載失敗</string>
+    <string name="selinux_permissive">SELinux 處於寬容模式</string>
+    <string name="sepolicy_incorrect">SELinux 規則異常</string>
     <string name="parasitic_recommend">推薦使用寄生管理器</string>
     <string name="parasitic_recommend_summary">LSPosed 現在支援系統寄生以繞過偵測。您可以在成功建立寄生管理器圖示後從系統設定中移除 LSPosed 管理器。您隨時可以從 /data/adb/lspd/manager.apk 重新安裝管理器。</string>
     <string name="create_shortcut">建立捷徑</string>
@@ -74,6 +80,7 @@
     <string name="menuSaveToSd">儲存</string>
     <string name="nav_item_logs_verbose">詳細日誌</string>
     <string name="nav_item_logs_module">模組日誌</string>
+    <string name="logs_saved">日誌已儲存</string>
     <string name="logs_save_failed2">儲存失敗：\n%s</string>
     <string name="menuClearLog">立即清理日誌</string>
     <string name="logs_cleared">日誌清理成功</string>
@@ -165,7 +172,7 @@
     <string name="settings_restore_failed2">還原失敗：\n%s</string>
     <string name="group_network">網路</string>
     <string name="dns_over_http">安全 DNS（DoH）</string>
-    <string name="dns_over_http_summary">解決部分地區的 DNS 汙染問題</string>
+    <string name="dns_over_http_summary">解決部分地區的 DNS 中毒問題</string>
     <string name="theme_color">主題強調色</string>
     <string name="theme_color_system">系統主題顏色</string>
     <string name="settings_show_hidden_icon_apps_enabled">強制應用程式在啟動器中顯示圖示</string>
@@ -225,4 +232,7 @@
     <string name="color_deep_orange">深橙</string>
     <string name="color_brown">棕色</string>
     <string name="color_blue_grey">藍灰</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="other">%d 次下載</item>
+    </plurals>
 </resources>

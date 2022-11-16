@@ -37,6 +37,7 @@ import android.content.Intent;
 import android.content.pm.LauncherApps;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ParceledListSlice;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
@@ -75,22 +76,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import hidden.HiddenApiBridge;
-import io.github.xposed.xposedservice.utils.ParceledListSlice;
+import rikka.parcelablelist.ParcelableListSlice;
 
 public class LSPManagerService extends ILSPManagerService.Stub {
     // this maybe useful when obtaining the manager binder
     private static String RANDOM_UUID = null;
     private static final String SHORTCUT_ID = "org.lsposed.manager.shortcut";
-    public static final int NOTIFICATION_ID = 114514;
     public static final String CHANNEL_ID = "lsposed";
     public static final String CHANNEL_NAME = "LSPosed Manager";
     public static final int CHANNEL_IMP = NotificationManager.IMPORTANCE_HIGH;
+
+    private static final HashMap<String, Integer> notificationIds = new HashMap<>();
+    private static int previousNotificationId = 2000;
 
     private static final HandlerThread worker = new HandlerThread("manager worker");
     private static final Handler workerHandler;
@@ -220,12 +224,48 @@ public class LSPManagerService extends ILSPManagerService.Stub {
         }
     }
 
+    private static String getNotificationIdKey(String modulePackageName, int moduleUserId) {
+        return modulePackageName + ":" + moduleUserId;
+    }
+
+    private static int getAutoIncrementNotificationId() {
+        // previousNotificationId start with 2001
+        var idValue = previousNotificationId++;
+        // Templates that may conflict with system ids after 2000
+        // Copied from https://android.googlesource.com/platform/frameworks/base/+/master/proto/src/system_messages.proto
+        var NOTE_NETWORK_AVAILABLE = 17303299;
+        var NOTE_REMOTE_BUGREPORT = 678432343;
+        var NOTE_STORAGE_PUBLIC = 0x53505542;
+        var NOTE_STORAGE_PRIVATE = 0x53505256;
+        var NOTE_STORAGE_DISK = 0x5344534b;
+        var NOTE_STORAGE_MOVE = 0x534d4f56;
+        // If auto created id is conflict, recreate it
+        if (idValue == NOTE_NETWORK_AVAILABLE ||
+                idValue == NOTE_REMOTE_BUGREPORT ||
+                idValue == NOTE_STORAGE_PUBLIC ||
+                idValue == NOTE_STORAGE_PRIVATE ||
+                idValue == NOTE_STORAGE_DISK ||
+                idValue == NOTE_STORAGE_MOVE) {
+            return getAutoIncrementNotificationId();
+        } else {
+            return idValue;
+        }
+    }
+
+    private static int pushAndGetNotificationId(String modulePackageName, int moduleUserId) {
+        var idKey = getNotificationIdKey(modulePackageName, moduleUserId);
+        // If there is a new notification, put a new notification id into map
+        return notificationIds.computeIfAbsent(idKey, key -> getAutoIncrementNotificationId());
+    }
+
     public static void showNotification(String modulePackageName,
                                         int moduleUserId,
                                         boolean enabled,
                                         boolean systemModule) {
         try {
             var context = new FakeContext();
+            var userInfo = UserService.getUserInfo(moduleUserId);
+            String userName = userInfo != null ? userInfo.name : String.valueOf(moduleUserId);
             String title = context.getString(enabled ? systemModule ?
                     R.string.xposed_module_updated_notification_title_system :
                     R.string.xposed_module_updated_notification_title :
@@ -233,7 +273,9 @@ public class LSPManagerService extends ILSPManagerService.Stub {
             String content = context.getString(enabled ? systemModule ?
                     R.string.xposed_module_updated_notification_content_system :
                     R.string.xposed_module_updated_notification_content :
-                    R.string.module_is_not_activated_yet_detailed, modulePackageName);
+                    (moduleUserId == 0 ?
+                            R.string.module_is_not_activated_yet_main_user_detailed :
+                            R.string.module_is_not_activated_yet_multi_user_detailed), modulePackageName, userName);
 
             var style = new Notification.BigTextStyle();
             style.bigText(content);
@@ -252,10 +294,30 @@ public class LSPManagerService extends ILSPManagerService.Stub {
             final NotificationChannel channel =
                     new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, CHANNEL_IMP);
             im.createNotificationChannels("android",
-                    new android.content.pm.ParceledListSlice<>(Collections.singletonList(channel)));
-            im.enqueueNotificationWithTag("android", "android", "114514", NOTIFICATION_ID, notification, 0);
+                    new ParceledListSlice<>(Collections.singletonList(channel)));
+            im.enqueueNotificationWithTag("android", "android", modulePackageName,
+                    pushAndGetNotificationId(modulePackageName, moduleUserId),
+                    notification, 0);
         } catch (Throwable e) {
             Log.e(TAG, "post notification", e);
+        }
+    }
+
+    public static void cancelNotification(String modulePackageName, int moduleUserId) {
+        try {
+            var idKey = getNotificationIdKey(modulePackageName, moduleUserId);
+            var idValue = notificationIds.get(idKey);
+            if (idValue == null) return;
+            var im = INotificationManager.Stub.asInterface(android.os.ServiceManager.getService("notification"));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                im.cancelNotificationWithTag("android", "android", modulePackageName, idValue, 0);
+            } else {
+                im.cancelNotificationWithTag("android", modulePackageName, idValue, 0);
+            }
+            // Remove the notification id when the notification is canceled or current module app was uninstalled
+            notificationIds.remove(idKey);
+        } catch (Throwable e) {
+            Log.e(TAG, "cancel notification", e);
         }
     }
 
@@ -372,12 +434,10 @@ public class LSPManagerService extends ILSPManagerService.Stub {
             if (pkgInfo != null) {
                 cacheDir = new File(HiddenApiBridge.ApplicationInfo_credentialProtectedDataDir(pkgInfo.applicationInfo) + "/cache");
             }
-            var webviewDir = new File(cacheDir, "WebView");
-            webviewDir.mkdirs();
-            var httpCacheDir = new File(cacheDir, "http_cache");
-            httpCacheDir.mkdirs();
-            ensureWebViewPermission(webviewDir);
-            ensureWebViewPermission(httpCacheDir);
+
+            // The cache directory does not exist after `pm clear`
+            cacheDir.mkdirs();
+            ensureWebViewPermission(cacheDir);
         } catch (Throwable e) {
             Log.w(TAG, "cannot ensure webview dir", e);
         }
@@ -529,7 +589,7 @@ public class LSPManagerService extends ILSPManagerService.Stub {
     }
 
     @Override
-    public ParceledListSlice<PackageInfo> getInstalledPackagesFromAllUsers(int flags, boolean filterNoProcess) throws RemoteException {
+    public ParcelableListSlice<PackageInfo> getInstalledPackagesFromAllUsers(int flags, boolean filterNoProcess) throws RemoteException {
         return PackageService.getInstalledPackagesFromAllUsers(flags, filterNoProcess);
     }
 
@@ -678,7 +738,7 @@ public class LSPManagerService extends ILSPManagerService.Stub {
     }
 
     @Override
-    public ParceledListSlice<ResolveInfo> queryIntentActivitiesAsUser(Intent intent, int flags, int userId) throws RemoteException {
+    public ParcelableListSlice<ResolveInfo> queryIntentActivitiesAsUser(Intent intent, int flags, int userId) throws RemoteException {
         return PackageService.queryIntentActivities(intent, intent.getType(), flags, userId);
     }
 
@@ -762,6 +822,11 @@ public class LSPManagerService extends ILSPManagerService.Stub {
     }
 
     @Override
+    public void clearApplicationProfileData(String packageName) throws RemoteException {
+        PackageService.clearApplicationProfileData(packageName);
+    }
+
+    @Override
     public boolean performDexOptMode(String packageName) throws RemoteException {
         return PackageService.performDexOptMode(packageName);
     }
@@ -777,11 +842,11 @@ public class LSPManagerService extends ILSPManagerService.Stub {
     }
 
     @Override
-    public boolean dex2oatWrapperAlive() {
+    public int getDex2OatWrapperCompatibility() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return ServiceManager.getDex2OatService().isAlive();
+            return ServiceManager.getDex2OatService().getCompatibility();
         } else {
-            return false;
+            return 0;
         }
     }
 }

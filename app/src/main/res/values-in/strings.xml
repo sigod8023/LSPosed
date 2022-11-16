@@ -33,6 +33,8 @@
     <string name="module_repo">Gudang</string>
     <string name="module_repo_loading">Memuat…</string>
     <string name="module_repo_up_to_date">Semua modul sudah terbaru</string>
+    <string name="module_repo_published_time">Diterbitkan pada %s</string>
+    <string name="module_repo_updated_time">Diperbarui pada %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="other">%d modul dapat ditingkatkan</item>
     </plurals>
@@ -60,10 +62,14 @@
     <string name="info_device">Perangkat</string>
     <string name="info_system_abi">Sistem ABI</string>
     <string name="info_api">Antarmuka Injeksi</string>
-    <string name="info_dex2oat_wrapper">Pengoptimal Pengemas</string>
+    <string name="info_dex2oat_wrapper">Pembungkus Pengoptimal Dex</string>
     <string name="supported">Didukung</string>
-    <string name="unsupported_android_version">Tidak didukung (versi Android tidak terpenuhi)</string>
-    <string name="unsupported_crashed">Tidak didukung (Rusak)</string>
+    <string name="unsupported">Tidak didukung</string>
+    <string name="android_version_unsatisfied">Versi Android tidak puas</string>
+    <string name="crashed">Hancur</string>
+    <string name="mount_failed">Pemasangan gagal</string>
+    <string name="selinux_permissive">SELinux permisif</string>
+    <string name="sepolicy_incorrect">Kebijakan SELinux salah</string>
     <string name="parasitic_recommend">Manajer Parasit Direkomendasikan</string>
     <string name="parasitic_recommend_summary">LSPosed sekarang mendukung parasitisasi sistem untuk menghindari deteksi. Anda dapat menghapus instalan manajer dengan aman setelah berhasil membuat pintasan manajer parasit. Bagaimanapun, Anda dapat menginstal kembali manajer dari /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Buat pintasan</string>
@@ -74,6 +80,7 @@
     <string name="menuSaveToSd">Simpan</string>
     <string name="nav_item_logs_verbose">Log Verbose</string>
     <string name="nav_item_logs_module">Log Modul</string>
+    <string name="logs_saved">Log disimpan</string>
     <string name="logs_save_failed2">Gagal menyimpan:\n%s</string>
     <string name="menuClearLog">Hapus log sekarang</string>
     <string name="logs_cleared">Log berhasil dihapus.</string>
@@ -225,4 +232,7 @@
     <string name="color_deep_orange">Oranye gelap</string>
     <string name="color_brown">Coklat</string>
     <string name="color_blue_grey">Abu-abu kebiruan</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="other">%d unduhan</item>
+    </plurals>
 </resources>

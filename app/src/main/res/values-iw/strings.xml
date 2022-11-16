@@ -37,6 +37,8 @@
     <string name="module_repo">רפוסיטורי</string>
     <string name="module_repo_loading">טוען…</string>
     <string name="module_repo_up_to_date">כל המודלים מעודכנים</string>
+    <string name="module_repo_published_time">פורסם ב %s</string>
+    <string name="module_repo_updated_time">עודכן ב %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d מודלים ניתנים לשדרוג</item>
         <item quantity="two">%d שני מודלים ניתנים לשדרוג</item>
@@ -44,7 +46,7 @@
         <item quantity="other">%d מודלים ניתנים לשדרוג</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[הצג קוד מקור ב%1$s<br/> הצטרף לערוץ %2$s שלנו]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">א ש</string>
     <string name="install">התקנה</string>
     <string name="install_summary">הקש כדי להתקין את LSPosed</string>
     <string name="not_installed">לא מותקן</string>
@@ -67,10 +69,14 @@
     <string name="info_device">מכשיר</string>
     <string name="info_system_abi">ABI מערכת</string>
     <string name="info_api">ממשק הזרקה</string>
-    <string name="info_dex2oat_wrapper">מעטפת אופטימיזציה</string>
+    <string name="info_dex2oat_wrapper">עטיפה של Dex Optimizer</string>
     <string name="supported">נתמך</string>
-    <string name="unsupported_android_version">לא נתמך (גרסת אנדרואיד לא מרוצה)</string>
-    <string name="unsupported_crashed">לא נתמך (קרס)</string>
+    <string name="unsupported">לא נתמך</string>
+    <string name="android_version_unsatisfied">גרסת אנדרואיד לא מרוצה</string>
+    <string name="crashed">התרסק</string>
+    <string name="mount_failed">הר נכשל</string>
+    <string name="selinux_permissive">SELinux מתירנית</string>
+    <string name="sepolicy_incorrect">מדיניות SELinux שגויה</string>
     <string name="parasitic_recommend">מנהל טפילים מומלץ</string>
     <string name="parasitic_recommend_summary">LSPosed תומך כעת בטפילת מערכת כדי למנוע זיהוי. אתה יכול להסיר בבטחה את המנהל לאחר יצירת קיצור מוצלח של המנהל הטפילי. בכל מקרה אתה יכול להתקין את המנהל בחזרה מ /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">צור קיצור דרך</string>
@@ -81,6 +87,7 @@
     <string name="menuSaveToSd">שמור</string>
     <string name="nav_item_logs_verbose">יומנים מפורשים</string>
     <string name="nav_item_logs_module">יומני מודלים</string>
+    <string name="logs_saved">יומנים נשמרו</string>
     <string name="logs_save_failed2">השמירה נכשלה:\n%s</string>
     <string name="menuClearLog">נקה לוגים עכשיו</string>
     <string name="logs_cleared">לוגים נוקו בהצלחה.</string>
@@ -232,4 +239,10 @@
     <string name="color_deep_orange">כתום עמוק</string>
     <string name="color_brown">חום</string>
     <string name="color_blue_grey">כחול אפור</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d הורדה</item>
+        <item quantity="two">%d הורדות</item>
+        <item quantity="many">%d הורדות</item>
+        <item quantity="other">%d הורדות</item>
+    </plurals>
 </resources>

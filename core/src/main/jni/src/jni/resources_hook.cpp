@@ -24,7 +24,7 @@
 #include "elf_util.h"
 #include "native_util.h"
 #include "resources_hook.h"
-#include "ConfigBridge.h"
+#include "config_bridge.h"
 
 using namespace lsplant;
 
@@ -77,7 +77,7 @@ namespace lspd {
         }
         return android::ResStringPool::setup(HookHandler{
             .art_symbol_resolver = [&](auto s) {
-                return fw.template getSymbAddress<void*>(s);
+                return fw.template getSymbAddress(s);
             }
         });
     }

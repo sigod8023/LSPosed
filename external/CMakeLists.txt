@@ -5,9 +5,7 @@ macro(SET_OPTION option value)
 endmacro()
 
 SET_OPTION(DOBBY_GENERATE_SHARED OFF)
-if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    SET_OPTION(DOBBY_DEBUG OFF)
-endif ()
+SET_OPTION(Plugin.SymbolResolver OFF)
 
 set(LIBCXX_SOURCES
         algorithm.cpp
@@ -26,7 +24,8 @@ set(LIBCXX_SOURCES
         filesystem/operations.cpp
         functional.cpp
         future.cpp
-        hash.cpp
+# use absl instead
+#        hash.cpp
         ios.cpp
         iostream.cpp
         locale.cpp
@@ -43,7 +42,7 @@ set(LIBCXX_SOURCES
         strstream.cpp
         system_error.cpp
         thread.cpp
-        typeinfo.cpp
+#        typeinfo.cpp
         utility.cpp
         valarray.cpp
         variant.cpp
@@ -65,7 +64,7 @@ set(LIBCXX_FLAGS
         -D__STDC_FORMAT_MACROS
         )
 set(LIBCXX_EXPORT_INCLUDES cxx/include)
-set(LIBCXX_INCLUDES)
+set(LIBCXX_INCLUDES cxx/src)
 
 set(LIBCXXABI_SOURCES
         abort_message.cpp
@@ -76,7 +75,6 @@ set(LIBCXXABI_SOURCES
         cxa_handlers.cpp
         cxa_noexception.cpp
         cxa_thread_atexit.cpp
-        cxa_unexpected.cpp
         cxa_vector.cpp
         cxa_virtual.cpp
         stdlib_exception.cpp
@@ -100,6 +98,7 @@ target_include_directories(cxx PRIVATE ${LIBCXX_INCLUDES} ${LIBCXXABI_INCLUDES})
 
 link_libraries(cxx)
 
+OPTION(LSPLANT_BUILD_SHARED OFF)
 add_subdirectory(lsplant/lsplant/src/main/jni)
 add_subdirectory(dobby)
 add_subdirectory(fmt)

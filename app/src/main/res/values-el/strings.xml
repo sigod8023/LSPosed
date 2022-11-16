@@ -34,12 +34,14 @@
     <string name="module_repo">Αποθετήριο</string>
     <string name="module_repo_loading">Φόρτωση…</string>
     <string name="module_repo_up_to_date">Όλα τα πρόσθετα είναι ενημερωμένα</string>
+    <string name="module_repo_published_time">Δημοσιεύθηκε στο %s</string>
+    <string name="module_repo_updated_time">Ενημερώθηκε στο %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d ένθεμα αναβαθμίσιμο</item>
         <item quantity="other">%d πρόσθετα μπορούν να ενημερωθούν</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[Δείτε τον πηγαίο κώδικα στο %1$s<br/>Εγγραφείτε στο %2$s κανάλι μας]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">Aristeidis Alexopoulos</string>
     <string name="install">Εγκατάσταση</string>
     <string name="install_summary">Πατήστε για εγκατάσταση του LSPosed</string>
     <string name="not_installed">Μη εγκατεστημένο</string>
@@ -62,10 +64,14 @@
     <string name="info_device">Συσκευή</string>
     <string name="info_system_abi">Σύστημα ABI</string>
     <string name="info_api">Διεπαφή Έγχυσης</string>
-    <string name="info_dex2oat_wrapper">Βελτιστοποιητής Wrapper</string>
+    <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
     <string name="supported">Υποστηριζόμενο</string>
-    <string name="unsupported_android_version">Μη υποστηριζόμενη (έκδοση Android που δεν ικανοποιείται)</string>
-    <string name="unsupported_crashed">Μη υποστηριζόμενο (συνετρίβη)</string>
+    <string name="unsupported">Μη υποστηριζόμενο</string>
+    <string name="android_version_unsatisfied">Ανικανοποίητη έκδοση Android</string>
+    <string name="crashed">Συνετρίβη</string>
+    <string name="mount_failed">Mount απέτυχε</string>
+    <string name="selinux_permissive">Το SELinux είναι επιτρεπτικό</string>
+    <string name="sepolicy_incorrect">Η πολιτική SELinux είναι λανθασμένη</string>
     <string name="parasitic_recommend">Προτεινόμενος Παρασιτικός Διαχειριστής</string>
     <string name="parasitic_recommend_summary">Το LSPosed τώρα υποστηρίζει παρασιτισμό συστήματος για την αποφυγή ανίχνευσης. Μπορείτε να απεγκαταστήσετε με ασφάλεια τον διαχειριστή μετά την επιτυχή δημιουργία μιας συντόμευσης του παρασιτικού διαχειριστή. Σε κάθε περίπτωση μπορείτε να εγκαταστήσετε το διαχειριστή ξανά από το /data/adb/lspd/manager.apk.</string>
     <string name="create_shortcut">Δημιουργία συντόμευσης</string>
@@ -76,6 +82,7 @@
     <string name="menuSaveToSd">Αποθήκευση</string>
     <string name="nav_item_logs_verbose">Λεπτομερείς Καταγραφές</string>
     <string name="nav_item_logs_module">Αρχείο Καταγραφής Πρόσθετων</string>
+    <string name="logs_saved">Αποθηκευμένα αρχεία καταγραφής</string>
     <string name="logs_save_failed2">Αποτυχία αποθήκευσης:\n%s</string>
     <string name="menuClearLog">Καθαρισμός αρχείου καταγραφής τώρα</string>
     <string name="logs_cleared">Το αρχείο καταγραφής εκκαθαρίστηκε επιτυχώς.</string>
@@ -227,4 +234,8 @@
     <string name="color_deep_orange">Βαθύ πορτοκαλί</string>
     <string name="color_brown">Καφέ</string>
     <string name="color_blue_grey">Μπλε γκρι</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d λήψη</item>
+        <item quantity="other">%d downloads</item>
+    </plurals>
 </resources>

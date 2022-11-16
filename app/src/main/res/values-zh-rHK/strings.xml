@@ -33,6 +33,8 @@
     <string name="module_repo">倉庫</string>
     <string name="module_repo_loading">正在載入…</string>
     <string name="module_repo_up_to_date">所有模組為最新版本</string>
+    <string name="module_repo_published_time">發佈於 %s</string>
+    <string name="module_repo_updated_time">更新於 %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="other">%d 模組可更新</item>
     </plurals>
@@ -60,10 +62,14 @@
     <string name="info_device">設備</string>
     <string name="info_system_abi">系統ABI</string>
     <string name="info_api">注入介面</string>
-    <string name="info_dex2oat_wrapper">優化器包裝器</string>
+    <string name="info_dex2oat_wrapper">優化安裝器</string>
     <string name="supported">支援</string>
-    <string name="unsupported_android_version">不支援（Android 版本不符合要求）</string>
-    <string name="unsupported_crashed">不支援（已當機）</string>
+    <string name="unsupported">不支持</string>
+    <string name="android_version_unsatisfied">不支持的安卓版本</string>
+    <string name="crashed">崩潰</string>
+    <string name="mount_failed">加載失敗</string>
+    <string name="selinux_permissive">寬容模式（SELinux）已啟用</string>
+    <string name="sepolicy_incorrect">寬容模式（SELinux）加載錯誤</string>
     <string name="parasitic_recommend">推薦使用寄生管理器</string>
     <string name="parasitic_recommend_summary">LSPosed 現在支援寄生到系統以避免檢測。
 在成功建立寄生管理器的捷徑後你可以安全地移除管理器。
@@ -76,6 +82,7 @@
     <string name="menuSaveToSd">儲存</string>
     <string name="nav_item_logs_verbose">詳細記錄檔</string>
     <string name="nav_item_logs_module">模組紀錄檔</string>
+    <string name="logs_saved">日誌已保存</string>
     <string name="logs_save_failed2">儲存失敗:\n%s</string>
     <string name="menuClearLog">立即清理紀錄檔</string>
     <string name="logs_cleared">紀錄檔清理成功</string>
@@ -127,6 +134,7 @@
     <string name="menu_show_modules">模組</string>
     <string name="menu_show_denylist">拒絕名單</string>
     <string name="failed_to_save_scope_list">作用域名單保存失敗</string>
+    <string name="app_version">版本：%1$s</string>
     <string name="use_recommended">推薦應用程式</string>
     <string name="no_scope_selected_has_recommended">未選擇任何應用程式。選擇推薦的？</string>
     <string name="use_recommended_message">選擇推薦的應用程式?</string>
@@ -226,4 +234,7 @@
     <string name="color_deep_orange">深橙色</string>
     <string name="color_brown">啡色</string>
     <string name="color_blue_grey">藍灰色</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="other">%d 次下載</item>
+    </plurals>
 </resources>

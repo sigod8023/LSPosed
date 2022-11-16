@@ -23,17 +23,19 @@
     <string name="overview">Übersicht</string>
     <string name="Modules">Module</string>
     <plurals name="modules_enabled_count">
-        <item quantity="one">%d Modul aktiviert</item>
+        <item quantity="one">%d Module aktiviert</item>
         <item quantity="other">%d Module aktiviert</item>
     </plurals>
     <string name="Logs">Protokolle</string>
     <string name="Settings">Einstellungen</string>
     <string name="feedback_or_suggestion">Feedback oder Verbesserungsideen</string>
-    <string name="About">Über</string>
+    <string name="About">Mehr Erfahren</string>
     <string name="report_issue">Fehler melden</string>
     <string name="module_repo">Modularchiv</string>
     <string name="module_repo_loading">Wird geladen…</string>
     <string name="module_repo_up_to_date">Alle Module sind auf dem neusten Stand</string>
+    <string name="module_repo_published_time">Veröffentlicht am %s</string>
+    <string name="module_repo_updated_time">Aktualisiert am %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d Modul Update verfügbar</item>
         <item quantity="other">%d Modul Updates verfügbar</item>
@@ -55,7 +57,7 @@ JJ108</string>
     <string name="system_prop_incorrect"><![CDATA[Einige notwendige Systemeigenschaften wurden gelöscht oder geändert.<br/>Module können gelegentlich außer Kraft gesetzt werden.]]></string>
     <string name="need_update">Aktualisierung erforderlich</string>
     <string name="please_update_summary">Bitte installieren Sie die neueste Version von LSPosed</string>
-    <string name="lsposed_not_active">LSPosed ist derzeit nicht installiert oder läuft nicht.</string>
+    <string name="lsposed_not_active">LSPosed ist derzeit nicht installiert oder aktiv.</string>
     <string name="info_api_version">API Version</string>
     <string name="info_framework_version">Framework Version</string>
     <string name="info_manager_version">Manager Version</string>
@@ -63,10 +65,14 @@ JJ108</string>
     <string name="info_device">Gerät</string>
     <string name="info_system_abi">System ABI</string>
     <string name="info_api">Injektionsschnittstelle</string>
-    <string name="info_dex2oat_wrapper">Optimierer-Wrapper</string>
+    <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
     <string name="supported">Unterstützt</string>
-    <string name="unsupported_android_version">Nicht unterstützt (Android-Version nicht erfüllt)</string>
-    <string name="unsupported_crashed">Nicht unterstützt (abgestürzt)</string>
+    <string name="unsupported">Nicht unterstützte</string>
+    <string name="android_version_unsatisfied">Android-Version unzufrieden</string>
+    <string name="crashed">Abgestürzt</string>
+    <string name="mount_failed">Montage fehlgeschlagen</string>
+    <string name="selinux_permissive">SELinux ist freizügig</string>
+    <string name="sepolicy_incorrect">SELinux-Richtlinie ist falsch</string>
     <string name="parasitic_recommend">Parasitärer Manager empfohlen</string>
     <string name="parasitic_recommend_summary">LSPosed unterstützt nun eine Systemparasitierung, um die Erkennung zu vermeiden. Sie können den Manager sicher deinstallieren, nachdem Sie erfolgreich eine Verknüpfung des parasitären Managers erstellt haben. In jedem Fall können Sie den Manager von /data/adb/lspd/manager.apk wieder erneut installieren.</string>
     <string name="create_shortcut">Verknüpfung erstellen</string>
@@ -77,6 +83,7 @@ JJ108</string>
     <string name="menuSaveToSd">Speichern</string>
     <string name="nav_item_logs_verbose">Ausführliche Protokolle</string>
     <string name="nav_item_logs_module">Modul-Protokolle</string>
+    <string name="logs_saved">Gespeicherte Protokolle</string>
     <string name="logs_save_failed2">Speichern fehlgeschlagen:\n%s</string>
     <string name="menuClearLog">Protokoll jetzt löschen</string>
     <string name="logs_cleared">Protokoll erfolgreich gelöscht.</string>
@@ -228,4 +235,8 @@ JJ108</string>
     <string name="color_deep_orange">Dunkelorange</string>
     <string name="color_brown">Braun</string>
     <string name="color_blue_grey">Blaugrau</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d herunterladen</item>
+        <item quantity="other">%d Downloads</item>
+    </plurals>
 </resources>
