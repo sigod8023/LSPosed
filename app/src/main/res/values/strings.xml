@@ -50,7 +50,7 @@
     <string name="activated">Activated</string>
     <string name="partial_activated">Partially activated</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy is not loaded properly</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[Modules that hook System Framework will not work.<br/>Please report this to <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> developer.]]></string>
+    <string name="selinux_policy_not_loaded"><![CDATA[Some features will not work.<br/>Please report this to <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> developer.]]></string>
     <string name="system_inject_fail_summary">System Framework injection failed</string>
     <string name="system_inject_fail"><![CDATA[This is rare and may be caused by <b>Magisk</b> or some low-quality Magisk modules.<br/>Please try to disable Magisk modules other than Riru and LSPosed or submit full log to developers.]]></string>
     <string name="system_prop_incorrect_summary">System prop incorrect</string>
@@ -64,8 +64,9 @@
     <string name="info_system_version">System version</string>
     <string name="info_device">Device</string>
     <string name="info_system_abi">System ABI</string>
-    <string name="info_api">Injection Interface</string>
     <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
+    <string name="enabled">Enabled</string>
+    <string name="not_enabled">Not enabled</string>
     <string name="supported">Supported</string>
     <string name="unsupported">Unsupported</string>
     <string name="android_version_unsatisfied">Android version unsatisfied</string>
@@ -73,12 +74,17 @@
     <string name="mount_failed">Mount failed</string>
     <string name="selinux_permissive">SELinux is permissive</string>
     <string name="sepolicy_incorrect">SELinux policy is incorrect</string>
-    <string name="parasitic_recommend">Parasitic Manager Recommended</string>
-    <string name="parasitic_recommend_summary">LSPosed now supports system parasitization to avoid detection. You can safely uninstall the manager after successfully creating a shortcut of the parasitic manager. In any case you can install the manager back from /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">Create shortcut</string>
-    <string name="never_show">Never show</string>
     <string name="update_lsposed">Update LSPosed</string>
     <string name="update_lsposed_msg">Confirm to update LSPosed? This device will reboot after update completion</string>
+
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">Welcome to LSPosed</string>
+    <string name="parasitic_welcome_summary">You are using the parasitic manager, which can create shortcut or still open from notification.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">You are using the parasitic manager, which can open from notification.</string>
+    <string name="create_shortcut">Create shortcut</string>
+    <string name="never_show">Never show</string>
+    <string name="app_welcome">Parasitic Manager Recommended</string>
+    <string name="app_welcome_summary">LSPosed now supports system parasitization to avoid detection, you can open parasitic manager from notification. It is recommended to uninstall the current application.</string>
 
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Save</string>
@@ -101,6 +107,7 @@
     <!-- ModulesActivity -->
     <string name="module_empty_description">(no description provided)</string>
     <string name="warning_xposed_min_version">This module requires a newer Xposed version (%d) and thus cannot be activated</string>
+    <string name="warning_target_version_higher">This module is designed for a newer Xposed version (%d) and thus some functionalities may not work</string>
     <string name="no_min_version_specified">This module does not specify the Xposed version it needs.</string>
     <string name="warning_min_version_too_low">This module was created for Xposed version %1$d, but due to incompatible changes in version %2$d, it has been disabled</string>
     <string name="warning_installed_on_external_storage">This module cannot be loaded because it\'s installed on the SD card, please move it to internal storage</string>
@@ -166,7 +173,8 @@
 
     <!-- SettingsActivity -->
     <string name="settings_group_framework">Framework</string>
-    <string name="pref_title_disable_verbose_log">Disable verbose logs</string>
+    <string name="settings_disable_verbose_log">Disable verbose logs</string>
+    <string name="settings_disable_verbose_log_summary">Report issues request to include verbose logs</string>
     <string name="pure_black_dark_theme">Black dark theme</string>
     <string name="pure_black_dark_theme_summary">Use the pure black theme if dark theme is enabled</string>
     <string name="settings_group_theme">Theme</string>
@@ -190,15 +198,19 @@
     <string name="settings_translation_contributors">Translation contributors</string>
     <string name="settings_translation">Participate in translation</string>
     <string name="settings_translation_summary">Help us translate %s into your language</string>
-    <string name="pref_title_enable_auto_add_shortcut">Automatically add a shortcut</string>
-    <string name="create_shortcut_summary">Manually create parasitic manager shortcut</string>
-    <string name="settings_enable_auto_add_shortcut_summary">No new shortcuts will be added when disabled in the non-parasitic manager</string>
+    <string name="settings_create_shortcut_summary">Create a shortcut that can open parasitic manager</string>
+    <string name="settings_shortcut_pinned_hint">Shortcut pinned</string>
+    <string name="settings_created_shortcut_summary">A shortcut has been created to open parasitic manager</string>
+    <string name="settings_unsupported_pin_shortcut_summary">The current default launcher does not support pin shortcuts</string>
+    <string name="settings_enable_status_notification">Status Notification</string>
+    <string name="settings_enable_status_notification_summary">Show a notification that can open parasitic manager</string>
+    <string name="disable_status_notification_error">No shortcut, cannot disable notification</string>
     <string name="settings_update_channel">Update channel</string>
     <string name="update_channel_stable">Stable</string>
     <string name="update_channel_bate">Beta</string>
     <string name="update_channel_nightly">Nightly build</string>
-    <string name="pref_title_restrict_classloader">Only module classloader can use Xposed API</string>
-    <string name="pref_summary_restrict_classloader">This may break some modules but benefit security (experimental feature)</string>
+    <string name="settings_xposed_api_call_protection">Xposed API call protection</string>
+    <string name="settings_xposed_api_call_protection_summary">Block dynamically loaded module code to use Xposed API, this may break some modules but benefit security</string>
 
     <!-- Module Repo -->
     <string name="module_readme">Readme</string>

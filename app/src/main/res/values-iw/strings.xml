@@ -54,7 +54,6 @@
     <string name="activated">הופעל</string>
     <string name="partial_activated">הופעל חלקית</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy לא נטען כמו שצריך</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[SEPolicy לא טעון כמו שצריך, מודולים שמתחברים ל-System Framework לא יעבדו.]]></string>
     <string name="system_inject_fail_summary">הזרקת System Framework נכשלה</string>
     <string name="system_inject_fail"><![CDATA[זה נדיר ועלול להיגרם על ידי <b>Magisk</b> או מודולי Magisk באיכות נמוכה.<br/>נסה להשבית מודולי Magisk שאינם Riru ו-LSPosed או שלח יומן מלא למפתחים.]]></string>
     <string name="system_prop_incorrect_summary">אבזר המערכת שגוי</string>
@@ -68,8 +67,9 @@
     <string name="info_system_version">גרסת מערכת</string>
     <string name="info_device">מכשיר</string>
     <string name="info_system_abi">ABI מערכת</string>
-    <string name="info_api">ממשק הזרקה</string>
     <string name="info_dex2oat_wrapper">עטיפה של Dex Optimizer</string>
+    <string name="enabled">מופעל</string>
+    <string name="not_enabled">לא מופעל</string>
     <string name="supported">נתמך</string>
     <string name="unsupported">לא נתמך</string>
     <string name="android_version_unsatisfied">גרסת אנדרואיד לא מרוצה</string>
@@ -77,12 +77,16 @@
     <string name="mount_failed">הר נכשל</string>
     <string name="selinux_permissive">SELinux מתירנית</string>
     <string name="sepolicy_incorrect">מדיניות SELinux שגויה</string>
-    <string name="parasitic_recommend">מנהל טפילים מומלץ</string>
-    <string name="parasitic_recommend_summary">LSPosed תומך כעת בטפילת מערכת כדי למנוע זיהוי. אתה יכול להסיר בבטחה את המנהל לאחר יצירת קיצור מוצלח של המנהל הטפילי. בכל מקרה אתה יכול להתקין את המנהל בחזרה מ /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">צור קיצור דרך</string>
-    <string name="never_show">לעולם על תראה</string>
     <string name="update_lsposed">עדכון LSPosed</string>
     <string name="update_lsposed_msg">לאשר לעדכן את LSPosed? מכשיר זה יאתחל לאחר השלמת העדכון</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">ברוכים הבאים לLSPosed</string>
+    <string name="parasitic_welcome_summary">אתה משתמש במנהל הטפילי, שיכול ליצור קיצור דרך או עדיין להיפתח מהתראה.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">אתה משתמש במנהל הטפילי, שיכול להיפתח מהתראה.</string>
+    <string name="create_shortcut">צור קיצור דרך</string>
+    <string name="never_show">לעולם על תראה</string>
+    <string name="app_welcome">מנהל טפילים מומלץ</string>
+    <string name="app_welcome_summary">LSPosed תומך כעת בטפילת מערכת כדי למנוע זיהוי, אתה יכול לפתוח מנהל טפילי מהתראה. מומלץ להסיר את האפליקציה הנוכחית.</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">שמור</string>
     <string name="nav_item_logs_verbose">יומנים מפורשים</string>
@@ -165,7 +169,8 @@
     <string name="list_empty">¯\\\\_(ツ)_\/¯\n אין פה כלום</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">Framework</string>
-    <string name="pref_title_disable_verbose_log">בטל verbose logs</string>
+    <string name="settings_disable_verbose_log">בטל verbose logs</string>
+    <string name="settings_disable_verbose_log_summary">בקשת דיווח על בעיות לכלול יומנים מילוליים</string>
     <string name="pure_black_dark_theme">ערכת נושא שחור כהה</string>
     <string name="pure_black_dark_theme_summary">השתמש בערכת נושא שחור טהור אם ערכת נושא כהה מופעלת</string>
     <string name="settings_group_theme">ערכת נושא</string>
@@ -189,15 +194,16 @@
     <string name="settings_translation_contributors">תורמים לתרגום</string>
     <string name="settings_translation">השתתף בתרגום</string>
     <string name="settings_translation_summary">עזור לנו לתרגם את %s לשפה שלך</string>
-    <string name="pref_title_enable_auto_add_shortcut">הוסף אוטומטית קיצור דרך</string>
-    <string name="create_shortcut_summary">צור באופן ידני קיצור דרך למנהל טפילי</string>
-    <string name="settings_enable_auto_add_shortcut_summary">לא יתווספו קיצורי דרך חדשים כשהם מושבתים במנהל הלא טפילי</string>
+    <string name="settings_create_shortcut_summary">צור קיצור דרך שיכול לפתוח מנהל טפילי</string>
+    <string name="settings_created_shortcut_summary">נוצר קיצור דרך לפתיחת מנהל טפילי</string>
+    <string name="settings_enable_status_notification">הודעת סטטוס</string>
+    <string name="settings_enable_status_notification_summary">הצג הודעה שיכולה לפתוח מנהל טפילי</string>
+    <string name="disable_status_notification_error">אין קיצור דרך, לא ניתן להשבית הודעה</string>
     <string name="settings_update_channel">ערוץ עדכון</string>
     <string name="update_channel_stable">יציב</string>
     <string name="update_channel_bate">בטא</string>
     <string name="update_channel_nightly">בניה לילית</string>
-    <string name="pref_title_restrict_classloader">רק מטען כיתות מודול יכול להשתמש ב-Xposed API</string>
-    <string name="pref_summary_restrict_classloader">זה עשוי לשבור מודולים מסוימים אך יועיל לאבטחה (תכונה נסיונית)</string>
+    <string name="settings_xposed_api_call_protection">הגנה מפני קריאות Xposed API</string>
     <!-- Module Repo -->
     <string name="module_readme">קרא אותי</string>
     <string name="module_releases">גרסאות</string>
@@ -215,7 +221,6 @@
     <!-- CrashReportActivity -->
     <string name="version_mismatch">הגרסה של LSPosed framework (%1$d) אינה תואמת למנהל (%2$d). נא להתקין מחדש את LSPosed.</string>
     <string name="manager_crashed">המנהל התרסק</string>
-    <string name="manager_crashed_info">דווח על כך </string>
     <string name="send_crash_info">שלח מידע על הקריסה</string>
     <string name="crash_info_copied">מידע קריסה הועתק ללוח</string>
     <string name="info_copied">הועתק ללוח</string>

@@ -53,7 +53,7 @@
     <string name="activated">Aktivováno</string>
     <string name="partial_activated">Částečně aktivováno</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy není správně načten</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[Moduly, které načítají System Framework nebudou fungovat.<br/>Prosím nahlaste to na <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> vývojáře.]]></string>
+    <string name="selinux_policy_not_loaded"><![CDATA[Některé funkce nebudou fungovat.<br/>Nahlaste to prosím vývojáři <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a>.]]></string>
     <string name="system_inject_fail_summary">Načtení System Framework se nezdařilo</string>
     <string name="system_inject_fail"><![CDATA[Toto je vzácné a může to být způsobeno <b>Magisk</b>em nebo některými málo kvalitními moduly Magisku.<br/>Zkuste vypnout moduly Magisk jiné než Riru a LSPosed nebo odešlete kompletní log vývojářům.]]></string>
     <string name="system_prop_incorrect_summary">Nesprávné systémové prop</string>
@@ -67,8 +67,9 @@
     <string name="info_system_version">Verze systému</string>
     <string name="info_device">Zařízení</string>
     <string name="info_system_abi">Systémové ABI (architektura)</string>
-    <string name="info_api">Závislost modulu</string>
     <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
+    <string name="enabled">Povoleno</string>
+    <string name="not_enabled">Není povoleno</string>
     <string name="supported">Podporováno</string>
     <string name="unsupported">Nepodporováno</string>
     <string name="android_version_unsatisfied">Verze Androidu není spokojena</string>
@@ -76,12 +77,16 @@
     <string name="mount_failed">Připojení se nezdařilo</string>
     <string name="selinux_permissive">SELinux je permisivní</string>
     <string name="sepolicy_incorrect">Zásady SELinuxu jsou nesprávné</string>
-    <string name="parasitic_recommend">Doporučený parazitický správce</string>
-    <string name="parasitic_recommend_summary">LSPosed nyní podporuje parazitizaci systému, aby se zabránilo detekci. Správce můžete bezpečně odinstalovat po úspěšném vytvoření zástupce parazitického manažera. V jakémkoli případě můžete správce nainstalovat zpět z /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">Vytvořit zástupce</string>
-    <string name="never_show">Nikdy nezobrazovat</string>
     <string name="update_lsposed">Aktualizovat LSPosed</string>
     <string name="update_lsposed_msg">Potvrdit aktualizaci LSPosed? Toto zařízení se restartuje po dokončení aktualizace</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">Vítejte v LSPosed</string>
+    <string name="parasitic_welcome_summary">Používáte parazitního správce, který může vytvořit zástupce nebo se stále otevírat z oznámení.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">Používáte parazitního správce, který se může otevřít z oznámení.</string>
+    <string name="create_shortcut">Vytvořit zástupce</string>
+    <string name="never_show">Nikdy nezobrazovat</string>
+    <string name="app_welcome">Doporučený parazitický manažer</string>
+    <string name="app_welcome_summary">LSPosed nyní podporuje parazitování systému. K zabránění detekce můžete správce parazitů otevřít z oznámení. Doporučuje se odinstalovat aktuální aplikaci.</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Uložit</string>
     <string name="nav_item_logs_verbose">Podrobné protokoly</string>
@@ -102,6 +107,7 @@
     <!-- ModulesActivity -->
     <string name="module_empty_description">(žádný popis)</string>
     <string name="warning_xposed_min_version">Tento modul vyžaduje novější Xposed verzi (%d) a proto nemůže být aktivován</string>
+    <string name="warning_target_version_higher">Tento modul je určen pro novější verzi Xposed (%d), a proto některé funkce nemusí fungovat</string>
     <string name="no_min_version_specified">Tento modul nespecifikuje potřebnou Xposed verzi.</string>
     <string name="warning_min_version_too_low">Tento modul byl vytvořen pro Xposed verzi %1$d, a tak z důvodu nekompatibilních změn ve verzi %2$dbyl zakázán</string>
     <string name="warning_installed_on_external_storage">Tento modul nelze načíst, protože je nainstalován na SD kartě, přesuňte jej na interní úložiště</string>
@@ -164,7 +170,8 @@
     <string name="list_empty">&lt;unk&gt; \\\\_(&lt;unk&gt; )_\/ &lt;unk&gt;\nTady nic není</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">Framework</string>
-    <string name="pref_title_disable_verbose_log">Zakázat podrobné protokoly</string>
+    <string name="settings_disable_verbose_log">Zakázat podrobné protokoly</string>
+    <string name="settings_disable_verbose_log_summary">Nahlásit požadavek na problémy a zahrnout detailní záznamy</string>
     <string name="pure_black_dark_theme">Čistě černý motiv</string>
     <string name="pure_black_dark_theme_summary">Použít čistý černý motiv, pokud je tmavý motiv povolen</string>
     <string name="settings_group_theme">Vzhled</string>
@@ -188,15 +195,18 @@
     <string name="settings_translation_contributors">Přispěvatelé překladu</string>
     <string name="settings_translation">Účast na překladu</string>
     <string name="settings_translation_summary">Pomozte nám přeložit %s do vašeho jazyka</string>
-    <string name="pref_title_enable_auto_add_shortcut">Automaticky přidat zástupce</string>
-    <string name="create_shortcut_summary">Ručně vytvořit zástupce parazitického manažera</string>
-    <string name="settings_enable_auto_add_shortcut_summary">Žádné nové zkratky nebudou přidány, pokud jsou vypnuty v neparazitickém správci</string>
+    <string name="settings_create_shortcut_summary">Vytvoření zástupce, který může otevřít parazitního správce</string>
+    <string name="settings_created_shortcut_summary">Byl vytvořen zástupce pro otevření parazitního správce</string>
+    <string name="settings_unsupported_pin_shortcut_summary">Současný výchozí spouštěč nepodporuje připnuté zkratky</string>
+    <string name="settings_enable_status_notification">Oznámení o stavu</string>
+    <string name="settings_enable_status_notification_summary">Zobrazení oznámení, které může otevřít parazitního správce</string>
+    <string name="disable_status_notification_error">Žádný zástupce, nelze zakázat oznámení</string>
     <string name="settings_update_channel">Kanál aktualizace</string>
     <string name="update_channel_stable">Stabilní</string>
     <string name="update_channel_bate">Beta</string>
     <string name="update_channel_nightly">Noční sestavení</string>
-    <string name="pref_title_restrict_classloader">Pouze modul classloader může používat rozhraní Xposed API</string>
-    <string name="pref_summary_restrict_classloader">Může to narušit některé moduly, ale prospěje to zabezpečení (experimentální funkce)</string>
+    <string name="settings_xposed_api_call_protection">Ochrana volání rozhraní Xposed API</string>
+    <string name="settings_xposed_api_call_protection_summary">Blokování dynamicky načítaného kódu modulu pro použití rozhraní Xposed API, což může narušit některé moduly, ale prospěje bezpečnosti</string>
     <!-- Module Repo -->
     <string name="module_readme">Přečti si mě</string>
     <string name="module_releases">Vydání</string>
@@ -214,7 +224,6 @@
     <!-- CrashReportActivity -->
     <string name="version_mismatch">Verze LSPosed (%1$d) neodpovídá správci (%2$d). Prosím přeinstalujte LSPosed.</string>
     <string name="manager_crashed">Manažer selhal</string>
-    <string name="manager_crashed_info">nahlásit to </string>
     <string name="send_crash_info">Odeslat informace o pádu</string>
     <string name="crash_info_copied">Informace o pádu zkopírovány do schránky</string>
     <string name="info_copied">Zkopírováno do schránky</string>

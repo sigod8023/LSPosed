@@ -41,7 +41,7 @@
         <item quantity="other">%d moduler opgraderbare</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[Vis kildekode på %1$s<br/>Tilmeld dig vores %2$s kanal]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">nul</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
     <string name="install">Installér</string>
     <string name="install_summary">Tryk for at installere LSPosed</string>
     <string name="not_installed">Ikke installeret</string>
@@ -49,7 +49,6 @@
     <string name="activated">Aktiveret</string>
     <string name="partial_activated">Delvist aktiveret</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy er ikke indlæst korrekt</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[Moduler som hook System Framework ikke vil virke.<br/>Rapporter venligst dette til <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> udvikler.]]></string>
     <string name="system_inject_fail_summary">System Framework injektion mislykkedes</string>
     <string name="system_inject_fail"><![CDATA[Dette er sjældent og kan være forårsaget af <b>Magisk</b> eller nogle lavkvalitets Magisk moduler.<br/>Prøv at deaktivere andre Magisk moduler end Riru og LSPosed eller indsende fuld log til udviklere.]]></string>
     <string name="system_prop_incorrect_summary">System prop forkert</string>
@@ -63,8 +62,9 @@
     <string name="info_system_version">System version</string>
     <string name="info_device">Enhed</string>
     <string name="info_system_abi">System ABI</string>
-    <string name="info_api">Injektions Grænseflade</string>
     <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
+    <string name="enabled">Aktiveret</string>
+    <string name="not_enabled">Ikke aktiveret</string>
     <string name="supported">Understøttet</string>
     <string name="unsupported">Ikke understøttet</string>
     <string name="android_version_unsatisfied">Android-version utilfreds</string>
@@ -72,12 +72,16 @@
     <string name="mount_failed">Montering mislykkedes</string>
     <string name="selinux_permissive">SELinux er tilladende</string>
     <string name="sepolicy_incorrect">SELinux-politik er forkert</string>
-    <string name="parasitic_recommend">Parasitisk Håndtering Anbefalet</string>
-    <string name="parasitic_recommend_summary">LSPosed understøtter nu system parasitization for at undgå afsløring. Du kan trygt afinstallere manager efter held at oprette en genvej til parasitleder. Under alle omstændigheder kan du installere manager tilbage fra /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">Opret genvej</string>
-    <string name="never_show">Vis aldrig</string>
     <string name="update_lsposed">Opdater LSPosed</string>
     <string name="update_lsposed_msg">Bekræft opdatering af LSPosed? Denne enhed vil genstarte efter opdateringsfuldførelse</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">Velkommen til LSPosed</string>
+    <string name="parasitic_welcome_summary">Du bruger den parasitære manager, som kan oprette genvej eller stadig åbne fra meddelelsen.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">Du bruger den parasitære manager, som kan åbnes fra notifikationen.</string>
+    <string name="create_shortcut">Opret genvej</string>
+    <string name="never_show">Vis aldrig</string>
+    <string name="app_welcome">Parasitic Manager Anbefalet</string>
+    <string name="app_welcome_summary">LSPosed understøtter nu systemparasitering for at undgå registrering, du kan åbne parasitmanager fra meddelelsen. Det anbefales at afinstallere det aktuelle program.</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Gem</string>
     <string name="nav_item_logs_verbose">Verbose Logs</string>
@@ -160,7 +164,8 @@
     <string name="list_empty">Spredning \\\\_(Ι)_\/ Ι\nIntet her</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">Framework</string>
-    <string name="pref_title_disable_verbose_log">Deaktivér verbose logs</string>
+    <string name="settings_disable_verbose_log">Deaktivere udførlige logfiler</string>
+    <string name="settings_disable_verbose_log_summary">Anmodning om at medtage verbose logs i rapporten om problemer</string>
     <string name="pure_black_dark_theme">Sort mørkt tema</string>
     <string name="pure_black_dark_theme_summary">Brug det rene sorte tema, hvis mørkt tema er aktiveret</string>
     <string name="settings_group_theme">Tema</string>
@@ -184,15 +189,16 @@
     <string name="settings_translation_contributors">Oversættelsesbidragsydere</string>
     <string name="settings_translation">Deltag i oversættelse</string>
     <string name="settings_translation_summary">Hjælp os med at oversætte %s til dit sprog</string>
-    <string name="pref_title_enable_auto_add_shortcut">Tilføj automatisk en genvej</string>
-    <string name="create_shortcut_summary">Opret manuelt en genvej til parasitic manager manuelt</string>
-    <string name="settings_enable_auto_add_shortcut_summary">Ingen nye genveje vil blive tilføjet når deaktiveret i den ikke-parasitære manager</string>
+    <string name="settings_create_shortcut_summary">Opret en genvej, der kan åbne parasitic manager</string>
+    <string name="settings_created_shortcut_summary">Der er oprettet en genvej til at åbne parasitic manager</string>
+    <string name="settings_enable_status_notification">Meddelelse om status</string>
+    <string name="settings_enable_status_notification_summary">Vis en meddelelse, der kan åbne parasitic manager</string>
+    <string name="disable_status_notification_error">Ingen genvej, kan ikke deaktivere meddelelse</string>
     <string name="settings_update_channel">Opdater kanal</string>
     <string name="update_channel_stable">Stabil</string>
     <string name="update_channel_bate">Beta</string>
     <string name="update_channel_nightly">Nightly build</string>
-    <string name="pref_title_restrict_classloader">Kun modul classloader kan bruge Xposed API</string>
-    <string name="pref_summary_restrict_classloader">Dette kan ødelægge nogle moduler, men gavner sikkerheden (eksperimentel funktion)</string>
+    <string name="settings_xposed_api_call_protection">Beskyttelse af Xposed API-opkald</string>
     <!-- Module Repo -->
     <string name="module_readme">Læs</string>
     <string name="module_releases">Udgivelser</string>
@@ -210,7 +216,6 @@
     <!-- CrashReportActivity -->
     <string name="version_mismatch">Versionen af LSPosed framework (%1$d) matcher ikke manager (%2$d). Geninstaller venligst LSPosed.</string>
     <string name="manager_crashed">Manager styrtede ned</string>
-    <string name="manager_crashed_info">rapportér dette til </string>
     <string name="send_crash_info">Send crash info</string>
     <string name="crash_info_copied">Crash info kopieret til udklipsholder</string>
     <string name="info_copied">Kopieret til udklipsholderen</string>

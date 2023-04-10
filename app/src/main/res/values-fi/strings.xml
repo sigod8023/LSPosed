@@ -41,7 +41,7 @@
         <item quantity="other">%d moduulia päivitettävissä</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[Näytä lähdekoodi %1$s<br/>Liity kanavaamme %2$s]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">tyhjä</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
     <string name="install">Asenna</string>
     <string name="install_summary">Napauta asentaaksesi LSPosed</string>
     <string name="not_installed">Ei asennettu</string>
@@ -49,7 +49,6 @@
     <string name="activated">Aktivoitu</string>
     <string name="partial_activated">Osittain aktivoitu</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy ei ole ladattu oikein</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[Moduulit jotka eivät toimi järjestelmäkehyksessä.<br/>Ole hyvä ja raportoi tästä <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> kehittäjä.]]></string>
     <string name="system_inject_fail_summary">Järjestelmän kehysinjektointi epäonnistui</string>
     <string name="system_inject_fail"><![CDATA[Tämä on harvinaista ja voi johtua <b>Magisk</b> tai joitakin heikkolaatuisia Magisk moduuleja.<br/>Yritä poistaa käytöstä muut Magisk moduulit kuin Riru ja LSPosed tai lähettää täysi loki kehittäjille.]]></string>
     <string name="system_prop_incorrect_summary">Järjestelmän prop virheellinen</string>
@@ -63,8 +62,9 @@
     <string name="info_system_version">Järjestelmän versio</string>
     <string name="info_device">Laite</string>
     <string name="info_system_abi">Järjestelmä ABI</string>
-    <string name="info_api">Pistoksen Käyttöliittymä</string>
     <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
+    <string name="enabled">Käytössä</string>
+    <string name="not_enabled">Ei käytössä</string>
     <string name="supported">Tuettu</string>
     <string name="unsupported">Ei tuettu</string>
     <string name="android_version_unsatisfied">Android-versio tyytymätön</string>
@@ -72,12 +72,16 @@
     <string name="mount_failed">Kiinnitys epäonnistui</string>
     <string name="selinux_permissive">SELinux on salliva</string>
     <string name="sepolicy_incorrect">SELinux-käytäntö on virheellinen</string>
-    <string name="parasitic_recommend">Suositeltu Loistava Johtaja</string>
-    <string name="parasitic_recommend_summary">LSPosed tukee nyt järjestelmän parasitization välttää havaitsemista. Voit turvallisesti poistaa managerin kun onnistuneesti luoda pikakuvake loishallintaan. Joka tapauksessa voit asentaa hallintaohjelman takaisin osoitteesta /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">Luo pikakuvake</string>
-    <string name="never_show">Älä näytä koskaan</string>
     <string name="update_lsposed">Päivitys LSPostettu</string>
     <string name="update_lsposed_msg">Vahvista LSPost-päivitys? Tämä laite käynnistyy uudelleen päivityksen jälkeen</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">Tervetuloa LSPosed</string>
+    <string name="parasitic_welcome_summary">Käytät loishallintaohjelmaa, joka voi luoda pikakuvakkeen tai silti avata ilmoituksen.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">Käytät loishallintaohjelmaa, joka voidaan avata ilmoituksesta.</string>
+    <string name="create_shortcut">Luo pikakuvake</string>
+    <string name="never_show">Älä näytä koskaan</string>
+    <string name="app_welcome">Parasitic Manager Suositellaan</string>
+    <string name="app_welcome_summary">LSPosed tukee nyt järjestelmän loisimista havaitsemisen välttämiseksi, voit avata loishallinnan ilmoituksesta. On suositeltavaa poistaa nykyinen sovellus.</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Tallenna</string>
     <string name="nav_item_logs_verbose">Verbose Lokit</string>
@@ -160,7 +164,8 @@
     <string name="list_empty">¶ \\\\_(konferenssissa)_\/ ¶\nEi mitään tässä</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">Framework</string>
-    <string name="pref_title_disable_verbose_log">Poista verbose lokit käytöstä</string>
+    <string name="settings_disable_verbose_log">Sanallisten lokien poistaminen käytöstä</string>
+    <string name="settings_disable_verbose_log_summary">Raportti pyytää sisällyttämään sanalliset lokit</string>
     <string name="pure_black_dark_theme">Musta tumma teema</string>
     <string name="pure_black_dark_theme_summary">Käytä puhdas musta teema, jos tumma teema on käytössä</string>
     <string name="settings_group_theme">Teema</string>
@@ -184,15 +189,16 @@
     <string name="settings_translation_contributors">Käännöksen osallistujat</string>
     <string name="settings_translation">Osallistu käännökseen</string>
     <string name="settings_translation_summary">Auta meitä kääntämään %s kielellesi</string>
-    <string name="pref_title_enable_auto_add_shortcut">Lisää pikakuvake automaattisesti</string>
-    <string name="create_shortcut_summary">Luo manuaalisesti parasiittisen managerin pikakuvake</string>
-    <string name="settings_enable_auto_add_shortcut_summary">Uusia pikakuvakkeita ei lisätä, kun ne on poistettu käytöstä ei-loishallinnassa</string>
+    <string name="settings_create_shortcut_summary">Luo pikakuvake, joka voi avata loishallintaohjelman.</string>
+    <string name="settings_created_shortcut_summary">On luotu pikakuvake, jolla voit avata loishallinnan</string>
+    <string name="settings_enable_status_notification">Tilailmoitus</string>
+    <string name="settings_enable_status_notification_summary">Näytä ilmoitus, joka voi avata loishallintaohjelman</string>
+    <string name="disable_status_notification_error">Ei pikakuvaketta, ilmoitusta ei voi poistaa käytöstä</string>
     <string name="settings_update_channel">Päivitä kanava</string>
     <string name="update_channel_stable">Vakaa</string>
     <string name="update_channel_bate">Beeta</string>
     <string name="update_channel_nightly">Yöllinen rakentaminen</string>
-    <string name="pref_title_restrict_classloader">Vain moduulin luokkienlataaja voi käyttää Xposed API:ta.</string>
-    <string name="pref_summary_restrict_classloader">Tämä saattaa rikkoa joitakin moduuleja, mutta hyödyttää turvallisuutta (kokeellinen ominaisuus).</string>
+    <string name="settings_xposed_api_call_protection">Xposedin API-kutsujen suojaus</string>
     <!-- Module Repo -->
     <string name="module_readme">Luennot</string>
     <string name="module_releases">Julkaisut</string>
@@ -210,7 +216,6 @@
     <!-- CrashReportActivity -->
     <string name="version_mismatch">LSPosed framework (%1$d) versio ei vastaa manageria (%2$d). Asenna LSPosed uudelleen.</string>
     <string name="manager_crashed">Hallinta kaatui</string>
-    <string name="manager_crashed_info">raportoi tästä </string>
     <string name="send_crash_info">Lähetä kaatumistiedot</string>
     <string name="crash_info_copied">Kaatumistiedot kopioitu leikepöydälle</string>
     <string name="info_copied">Kopioitu leikepöydälle</string>

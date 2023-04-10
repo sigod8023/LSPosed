@@ -1,19 +1,12 @@
+import java.net.URI
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-    val navVersion: String by settings
-    val agpVersion: String by settings
     repositories {
         gradlePluginPortal()
         google()
         mavenCentral()
-    }
-    plugins {
-        id("com.android.library") version agpVersion
-        id("com.android.application") version agpVersion
-        id("androidx.navigation.safeargs") version navVersion
-        id("dev.rikka.tools.autoresconfig") version "1.2.2"
-        id("dev.rikka.tools.materialthemebuilder") version "1.3.3"
     }
 }
 
@@ -22,6 +15,26 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
+    }
+    versionCatalogs {
+        create("libs") {
+            library("libxposed-api", "io.github.libxposed", "api").version {
+                branch = "master"
+            }
+            library("libxposed-interface", "io.github.libxposed", "interface").version {
+                branch = "master"
+            }
+        }
+    }
+}
+
+sourceControl {
+    gitRepository(URI.create("https://github.com/libxposed/api.git")) {
+        producesModule("io.github.libxposed:api")
+    }
+    gitRepository(URI.create("https://github.com/libxposed/service.git")) {
+        producesModule("io.github.libxposed:interface")
     }
 }
 
@@ -36,5 +49,4 @@ include(
     ":magisk-loader",
     ":services:manager-service",
     ":services:daemon-service",
-    ":services:xposed-service:interface",
 )

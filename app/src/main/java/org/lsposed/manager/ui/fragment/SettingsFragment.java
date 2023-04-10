@@ -33,12 +33,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.text.HtmlCompat;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-
-import rikka.material.preference.MaterialSwitchPreference;
-
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.color.DynamicColors;
@@ -48,12 +46,13 @@ import org.lsposed.manager.BuildConfig;
 import org.lsposed.manager.ConfigManager;
 import org.lsposed.manager.R;
 import org.lsposed.manager.databinding.FragmentSettingsBinding;
-import org.lsposed.manager.receivers.LSPManagerServiceHolder;
 import org.lsposed.manager.repo.RepoLoader;
 import org.lsposed.manager.ui.activity.MainActivity;
 import org.lsposed.manager.util.BackupUtils;
+import org.lsposed.manager.util.CloudflareDNS;
 import org.lsposed.manager.util.LangList;
 import org.lsposed.manager.util.NavUtil;
+import org.lsposed.manager.util.ShortcutUtil;
 import org.lsposed.manager.util.ThemeUtil;
 
 import java.time.LocalDateTime;
@@ -61,8 +60,8 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import rikka.core.util.ResourceUtils;
-import rikka.material.app.DayNightDelegate;
 import rikka.material.app.LocaleDelegate;
+import rikka.material.preference.MaterialSwitchPreference;
 import rikka.preference.SimpleMenuPreference;
 import rikka.recyclerview.RecyclerViewKt;
 import rikka.widget.borderview.BorderRecyclerView;
@@ -154,26 +153,49 @@ public class SettingsFragment extends BaseFragment {
                 prefDexObfuscate.setEnabled(installed);
                 prefDexObfuscate.setChecked(!installed || ConfigManager.isDexObfuscateEnabled());
                 prefDexObfuscate.setOnPreferenceChangeListener((preference, newValue) -> {
-                    parentFragment.showHint(R.string.reboot_required, true, R.string.reboot, v -> ConfigManager.reboot(false));
+                    parentFragment.showHint(R.string.reboot_required, true, R.string.reboot, v -> ConfigManager.reboot());
                     return ConfigManager.setDexObfuscateEnabled((boolean) newValue);
                 });
             }
 
-            MaterialSwitchPreference prefEnableShortcut = findPreference("enable_auto_add_shortcut");
-            if (prefEnableShortcut != null) {
-                prefEnableShortcut.setEnabled(installed);
-                prefEnableShortcut.setVisible(!App.isParasitic());
-                prefEnableShortcut.setChecked(installed && ConfigManager.isAddShortcut());
-                prefEnableShortcut.setOnPreferenceChangeListener((preference, newValue) -> ConfigManager.setAddShortcut((boolean) newValue));
+            MaterialSwitchPreference notification = findPreference("enable_status_notification");
+            if (notification != null) {
+                if (App.isParasitic && !ShortcutUtil.isLaunchShortcutPinned()) {
+                    var s = notification.getContext().getString(R.string.disable_status_notification_error);
+                    notification.setSummaryOn(notification.getSummary() + "\n" + s);
+                    if (ConfigManager.enableStatusNotification()) notification.setEnabled(false);
+                }
+                notification.setVisible(installed);
+                notification.setChecked(installed && ConfigManager.enableStatusNotification());
+                notification.setOnPreferenceChangeListener((p, v) -> {
+                    if ((boolean) v && App.isParasitic && !ShortcutUtil.isLaunchShortcutPinned()) {
+                        p.setEnabled(false);
+                    }
+                    return ConfigManager.setEnableStatusNotification((boolean) v);
+                });
             }
 
             Preference shortcut = findPreference("add_shortcut");
             if (shortcut != null) {
-                shortcut.setEnabled(installed);
+                shortcut.setEnabled(ShortcutUtil.shouldAllowPinShortcut(requireContext()));
+                shortcut.setVisible(App.isParasitic);
+                if (!ShortcutUtil.isRequestPinShortcutSupported(requireContext())) {
+                    shortcut.setEnabled(false);
+                    shortcut.setSummary(R.string.settings_unsupported_pin_shortcut_summary);
+                } else if (!ShortcutUtil.shouldAllowPinShortcut(requireContext()))
+                    shortcut.setSummary(R.string.settings_created_shortcut_summary);
                 shortcut.setOnPreferenceClickListener(preference -> {
-                    try {
-                        LSPManagerServiceHolder.getService().createShortcut();
-                    } catch (Throwable ignored) {
+                    if (!ShortcutUtil.requestPinLaunchShortcut(() -> {
+                        shortcut.setEnabled(false);
+                        shortcut.setSummary(R.string.settings_created_shortcut_summary);
+                        if (notification != null) {
+                            notification.setEnabled(true);
+                            notification.setSummaryOn(R.string.settings_enable_status_notification_summary);
+                        }
+                        App.getPreferences().edit().putBoolean("never_show_welcome", true).apply();
+                        parentFragment.showHint(R.string.settings_shortcut_pinned_hint, false);
+                    })) {
+                        parentFragment.showHint(R.string.settings_unsupported_pin_shortcut_summary, true);
                     }
                     return true;
                 });
@@ -212,11 +234,7 @@ public class SettingsFragment extends BaseFragment {
             if (theme != null) {
                 theme.setOnPreferenceChangeListener((preference, newValue) -> {
                     if (!App.getPreferences().getString("dark_theme", ThemeUtil.MODE_NIGHT_FOLLOW_SYSTEM).equals(newValue)) {
-                        DayNightDelegate.setDefaultNightMode(ThemeUtil.getDarkTheme((String) newValue));
-                        MainActivity activity = (MainActivity) getActivity();
-                        if (activity != null) {
-                            activity.restart();
-                        }
+                        AppCompatDelegate.setDefaultNightMode(ThemeUtil.getDarkTheme((String) newValue));
                     }
                     return true;
                 });
@@ -264,6 +282,22 @@ public class SettingsFragment extends BaseFragment {
                     if (activity != null) {
                         activity.restart();
                     }
+                    return true;
+                });
+            }
+
+            MaterialSwitchPreference prefDoH = findPreference("doh");
+            if (prefDoH != null) {
+                var dns = (CloudflareDNS) App.getOkHttpClient().dns();
+                if (!dns.noProxy) {
+                    prefDoH.setEnabled(false);
+                    prefDoH.setVisible(false);
+                    var group = prefDoH.getParent();
+                    assert group != null;
+                    group.setVisible(false);
+                }
+                prefDoH.setOnPreferenceChangeListener((p, v) -> {
+                    dns.DoH = (boolean) v;
                     return true;
                 });
             }

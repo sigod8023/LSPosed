@@ -26,12 +26,15 @@ import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.text.HtmlCompat;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.DialogFragment;
 
 import org.lsposed.lspd.ILSPManagerService;
@@ -42,7 +45,7 @@ import org.lsposed.manager.databinding.DialogAboutBinding;
 import org.lsposed.manager.databinding.FragmentHomeBinding;
 import org.lsposed.manager.ui.dialog.BlurBehindDialogBuilder;
 import org.lsposed.manager.ui.dialog.FlashDialogBuilder;
-import org.lsposed.manager.ui.dialog.ShortcutDialog;
+import org.lsposed.manager.ui.dialog.WelcomeDialog;
 import org.lsposed.manager.util.NavUtil;
 import org.lsposed.manager.util.Telemetry;
 import org.lsposed.manager.util.UpdateUtil;
@@ -54,18 +57,17 @@ import java.util.HashMap;
 import rikka.core.util.ClipboardUtils;
 import rikka.material.app.LocaleDelegate;
 
-public class HomeFragment extends BaseFragment {
-
+public class HomeFragment extends BaseFragment implements MenuProvider {
     private FragmentHomeBinding binding;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ShortcutDialog.showIfNeed(getChildFragmentManager());
+        WelcomeDialog.showIfNeed(getChildFragmentManager());
     }
 
     @Override
-    public void onPrepareOptionsMenu(Menu menu) {
+    public void onPrepareMenu(Menu menu) {
         menu.findItem(R.id.menu_about).setOnMenuItemClickListener(v -> {
             showAbout();
             return true;
@@ -74,6 +76,16 @@ public class HomeFragment extends BaseFragment {
             NavUtil.startURL(requireActivity(), "https://github.com/LSPosed/LSPosed/issues/new/choose");
             return true;
         });
+    }
+
+    @Override
+    public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+
+    }
+
+    @Override
+    public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+        return false;
     }
 
     @Override
@@ -101,7 +113,7 @@ public class HomeFragment extends BaseFragment {
                     if (UpdateUtil.canInstall()) {
                         new FlashDialogBuilder(activity, null).show();
                     } else {
-                        NavUtil.startURL(activity, getString(R.string.about_source));
+                        NavUtil.startURL(activity, getString(R.string.latest_url));
                     }
                 });
                 binding.updateCard.setVisibility(View.VISIBLE);
@@ -109,15 +121,17 @@ public class HomeFragment extends BaseFragment {
                 binding.updateCard.setVisibility(View.GONE);
             }
             boolean dex2oatAbnormal = ConfigManager.getDex2OatWrapperCompatibility() != ILSPManagerService.DEX2OAT_OK && !ConfigManager.dex2oatFlagsLoaded();
-            if (!ConfigManager.isSepolicyLoaded() || !ConfigManager.systemServerRequested() || dex2oatAbnormal) {
+            var sepolicyAbnormal = !ConfigManager.isSepolicyLoaded();
+            var systemServerAbnormal = !ConfigManager.systemServerRequested();
+            if (sepolicyAbnormal || systemServerAbnormal || dex2oatAbnormal) {
                 binding.statusTitle.setText(R.string.partial_activated);
                 binding.statusIcon.setImageResource(R.drawable.ic_round_warning_24);
                 binding.warningCard.setVisibility(View.VISIBLE);
-                if (!ConfigManager.isSepolicyLoaded()) {
+                if (sepolicyAbnormal) {
                     binding.warningTitle.setText(R.string.selinux_policy_not_loaded_summary);
                     binding.warningSummary.setText(HtmlCompat.fromHtml(getString(R.string.selinux_policy_not_loaded), HtmlCompat.FROM_HTML_MODE_LEGACY));
                 }
-                if (!ConfigManager.systemServerRequested()) {
+                if (systemServerAbnormal) {
                     binding.warningTitle.setText(R.string.system_inject_fail_summary);
                     binding.warningSummary.setText(HtmlCompat.fromHtml(getString(R.string.system_inject_fail), HtmlCompat.FROM_HTML_MODE_LEGACY));
                 }
@@ -156,7 +170,7 @@ public class HomeFragment extends BaseFragment {
 
         if (ConfigManager.isBinderAlive()) {
             binding.apiVersion.setText(String.valueOf(ConfigManager.getXposedApiVersion()));
-            binding.api.setText(ConfigManager.getApi());
+            binding.api.setText(ConfigManager.isDexObfuscateEnabled() ? R.string.enabled : R.string.not_enabled);
             binding.frameworkVersion.setText(String.format(LocaleDelegate.getDefaultLocale(), "%1$s (%2$d)", ConfigManager.getXposedVersionName(), ConfigManager.getXposedVersionCode()));
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.android_version_unsatisfied)));
@@ -196,7 +210,7 @@ public class HomeFragment extends BaseFragment {
                 "\n" +
                 binding.apiVersion.getText() +
                 "\n\n" +
-                activity.getString(R.string.info_api) +
+                activity.getString(R.string.settings_xposed_api_call_protection) +
                 "\n" +
                 binding.api.getText() +
                 "\n\n" +

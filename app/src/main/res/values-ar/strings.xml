@@ -57,7 +57,6 @@
     <string name="activated">مُفعّل</string>
     <string name="partial_activated">مفعل جزئياً</string>
     <string name="selinux_policy_not_loaded_summary">لم يتم تحميل SEPolicy بشكل صحيح</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[لن تعمل الوحدات النمطية التي تربط إطار عمل النظام.<br/>الرجاء الإبلاغ عن هذا إلى <a href="https://github.com/topjohnwu/Magisk/issues"><b>ماجيسك</b></a> مطور النظام.]]></string>
     <string name="system_inject_fail_summary">فشل حقن إطار عمل النظام</string>
     <string name="system_inject_fail"><![CDATA[هذا نادر وقد يكون بسبب <b>Magisk</b> أو بعض وحدات Magisk منخفضة الجودة.<br/>الرجاء محاولة تعطيل وحدات Magisk خلاف Riru وLSPosed أو إرسال سجل كامل للمطورين.]]></string>
     <string name="system_prop_incorrect_summary">نظام prop غير صحيح</string>
@@ -71,21 +70,26 @@
     <string name="info_system_version">إصدار النظام</string>
     <string name="info_device">الجهاز</string>
     <string name="info_system_abi">نظام ABI</string>
-    <string name="info_api">واجهة الحقن</string>
-    <string name="info_dex2oat_wrapper">غلاف محسّن Dex</string>
+    <string name="info_dex2oat_wrapper">غلاف Dex المحسّن</string>
+    <string name="enabled">مفعل</string>
+    <string name="not_enabled">غير مفعل</string>
     <string name="supported">مدعوم</string>
     <string name="unsupported">غير متوافق</string>
     <string name="android_version_unsatisfied">نسخة أندرويد غير راضية</string>
-    <string name="crashed">تحطم</string>
+    <string name="crashed">تعطّل</string>
     <string name="mount_failed">فشل التحميل</string>
     <string name="selinux_permissive">SELinux متساهل</string>
     <string name="sepolicy_incorrect">سياسة SELinux غير صحيحة</string>
-    <string name="parasitic_recommend">مدير طفيلي موصي به</string>
-    <string name="parasitic_recommend_summary">يدعم LSPosed الآن تطهير النظام لتجنب الكشف. يمكنك إلغاء تثبيت المدير بأمان بعد إنشاء اختصار للمدير الطفيلي. على أي حال يمكنك تثبيت المدير مرة أخرى من /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">إنشاء إختصار</string>
-    <string name="never_show">لا تظهر أبداً</string>
     <string name="update_lsposed">تحديث LSPosed</string>
     <string name="update_lsposed_msg">تأكيد تحديث LSPosed؟ سيتم إعـادة تشغيل هذا الجهاز بعد اكتمال التحديث</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">مرحباً بك في LSPosed</string>
+    <string name="parasitic_welcome_summary">أنت تستخدم مدير الطفيليات، الذي يمكنه إنشاء اختصار أو لا يزال مفتوحا من الإشعارات.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">أنت تستخدم المدير الطفيلي، الذي يمكن فتحه من الإشعار.</string>
+    <string name="create_shortcut">إنشاء إختصار</string>
+    <string name="never_show">لا تظهر أبداً</string>
+    <string name="app_welcome">مدير طفيلي موصي به</string>
+    <string name="app_welcome_summary">يدعم LSPosed الآن تطهير النظام لتجنب الكشف، يمكنك فتح مدير الطفيليات من الإشعار. من المستحسن إلغاء تثبيت التطبيق الحالي.</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">احفظ</string>
     <string name="nav_item_logs_verbose">سجلات مفصّلة</string>
@@ -168,7 +172,8 @@
     <string name="list_empty">¯\\\\_(ツ)_\/¯\n لا شيء هنا</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">إطار العمل</string>
-    <string name="pref_title_disable_verbose_log">تعطيل السجلات المفصّلة</string>
+    <string name="settings_disable_verbose_log">تعطيل السجلات المفصّلة</string>
+    <string name="settings_disable_verbose_log_summary">الإبلاغ عن مشاكل طلب لتضمين السجلات المفصولة</string>
     <string name="pure_black_dark_theme">السمة السوداء المظلمة</string>
     <string name="pure_black_dark_theme_summary">استخدام السمة السوداء الخالصة إذا تم تمكين السمة المظلمة</string>
     <string name="settings_group_theme">السمة</string>
@@ -192,15 +197,16 @@
     <string name="settings_translation_contributors">المساهمون بالترجمة</string>
     <string name="settings_translation">المشاركة في الترجمة</string>
     <string name="settings_translation_summary">ساعدنا في ترجمة %s إلى لغتك</string>
-    <string name="pref_title_enable_auto_add_shortcut">إضافة اختصار تلقائياً</string>
-    <string name="create_shortcut_summary">إنشاء اختصار المدير الطفيلي يدويًا</string>
-    <string name="settings_enable_auto_add_shortcut_summary">لن تضاف اختصارات جديدة عند تعطيلها في المدير غير الطفيلي</string>
+    <string name="settings_create_shortcut_summary">إنشاء اختصار يمكنه فتح مدير الطفيليات</string>
+    <string name="settings_created_shortcut_summary">تم إنشاء اختصار لفتح مدير الطفيليات</string>
+    <string name="settings_enable_status_notification">إشعارات الحالة</string>
+    <string name="settings_enable_status_notification_summary">إظهار إشعار يمكنه فتح مدير الطفيليات</string>
+    <string name="disable_status_notification_error">لا يوجد اختصار، لا يمكن تعطيل الإشعار</string>
     <string name="settings_update_channel">قناة التحديث</string>
     <string name="update_channel_stable">مستقر</string>
     <string name="update_channel_bate">تجريبي</string>
     <string name="update_channel_nightly">البناء الليلي</string>
-    <string name="pref_title_restrict_classloader">يمكن فقط لمحمل فئة الوحدة استخدام Xposed API</string>
-    <string name="pref_summary_restrict_classloader">قد يؤدي هذا إلى كسر بعض الوحدات ولكنه يفيد الأمان (ميزة تجريبية)</string>
+    <string name="settings_xposed_api_call_protection">حماية استدعاء Xposed API</string>
     <!-- Module Repo -->
     <string name="module_readme">اقرأني</string>
     <string name="module_releases">إصدارات</string>
@@ -218,7 +224,6 @@
     <!-- CrashReportActivity -->
     <string name="version_mismatch">إصدار إطار LSPosed (%1$d) لا يتطابق مع المدير (%2$d). يرجى إعادة تثبيت LSPosed.</string>
     <string name="manager_crashed">تعطل المدير</string>
-    <string name="manager_crashed_info">أبلغ عن هذا إلى </string>
     <string name="send_crash_info">إرسال معلومات العطل</string>
     <string name="crash_info_copied">تم نسخ معلومات العطل إلى الحافظة</string>
     <string name="info_copied">تم النسخ إلى الحافظة</string>

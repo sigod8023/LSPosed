@@ -52,10 +52,8 @@ public class BaseActivity extends MaterialActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
+        setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
-        if (ThemeUtil.isSystemAccent()) {
-            DynamicColors.applyToActivityIfAvailable(this);
-        }
         // make sure the versions are consistent
         if (BuildConfig.DEBUG) return;
         if (!ConfigManager.isBinderAlive()) return;
@@ -67,7 +65,7 @@ public class BaseActivity extends MaterialActivity {
                     if (UpdateUtil.canInstall()) {
                         new FlashDialogBuilder(this, (d, i) -> finish()).show();
                     } else {
-                        NavUtil.startURL(this, getString(R.string.about_source));
+                        NavUtil.startURL(this, getString(R.string.install_url));
                         finish();
                     }
                 })
