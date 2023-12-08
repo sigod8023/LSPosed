@@ -10,10 +10,10 @@ import androidx.annotation.Nullable;
 import org.lsposed.lspd.service.ILSPInjectedModuleService;
 import org.lsposed.lspd.service.IRemotePreferenceCallback;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("unchecked")
@@ -21,15 +21,14 @@ public class LSPosedRemotePreferences implements SharedPreferences {
 
     private final Map<String, Object> mMap = new ConcurrentHashMap<>();
 
-    private static final Object CONTENT = new Object();
-    final WeakHashMap<OnSharedPreferenceChangeListener, Object> mListeners = new WeakHashMap<>();
+    final HashSet<OnSharedPreferenceChangeListener> mListeners = new HashSet<>();
 
     IRemotePreferenceCallback callback = new IRemotePreferenceCallback.Stub() {
         @Override
         synchronized public void onUpdate(Bundle bundle) {
             Set<String> changes = new ArraySet<>();
             if (bundle.containsKey("delete")) {
-                var deletes = bundle.getStringArrayList("delete");
+                var deletes = (Set<String>) bundle.getSerializable("delete");
                 changes.addAll(deletes);
                 for (var key : deletes) {
                     mMap.remove(key);
@@ -42,7 +41,7 @@ public class LSPosedRemotePreferences implements SharedPreferences {
             }
             synchronized (mListeners) {
                 for (var key : changes) {
-                    mListeners.keySet().forEach(listener -> listener.onSharedPreferenceChanged(LSPosedRemotePreferences.this, key));
+                    mListeners.forEach(listener -> listener.onSharedPreferenceChanged(LSPosedRemotePreferences.this, key));
                 }
             }
         }
@@ -117,7 +116,7 @@ public class LSPosedRemotePreferences implements SharedPreferences {
     @Override
     public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
         synchronized (mListeners) {
-            mListeners.put(listener, CONTENT);
+            mListeners.add(listener);
         }
     }
 

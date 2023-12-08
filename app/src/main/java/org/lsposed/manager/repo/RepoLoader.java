@@ -77,7 +77,7 @@ public class RepoLoader {
     private final Set<RepoListener> listeners = ConcurrentHashMap.newKeySet();
     private boolean repoLoaded = false;
     private static final String originRepoUrl = "https://modules.lsposed.org/";
-    private static final String backupRepoUrl = "https://modules-vercel.lsposed.org/";
+    private static final String backupRepoUrl = "https://modules-blogcdn.lsposed.org/";
 
     private static final String secondBackupRepoUrl = "https://modules-cloudflare.lsposed.org/";
     private static String repoUrl = originRepoUrl;
@@ -99,19 +99,20 @@ public class RepoLoader {
     synchronized public void loadRemoteData() {
         repoLoaded = false;
         try {
-            var response = App.getOkHttpClient().newCall(new Request.Builder().url(repoUrl + "modules.json").build()).execute();
+            try (var response = App.getOkHttpClient().newCall(new Request.Builder().url(repoUrl + "modules.json").build()).execute()) {
 
-            if (response.isSuccessful()) {
-                ResponseBody body = response.body();
-                if (body != null) {
-                    try {
-                        String bodyString = body.string();
-                        Files.write(repoFile, bodyString.getBytes(StandardCharsets.UTF_8));
-                        loadLocalData(false);
-                    } catch (Throwable t) {
-                        Log.e(App.TAG, Log.getStackTraceString(t));
-                        for (RepoListener listener : listeners) {
-                            listener.onThrowable(t);
+                if (response.isSuccessful()) {
+                    ResponseBody body = response.body();
+                    if (body != null) {
+                        try {
+                            String bodyString = body.string();
+                            Files.write(repoFile, bodyString.getBytes(StandardCharsets.UTF_8));
+                            loadLocalData(false);
+                        } catch (Throwable t) {
+                            Log.e(App.TAG, Log.getStackTraceString(t));
+                            for (RepoListener listener : listeners) {
+                                listener.onThrowable(t);
+                            }
                         }
                     }
                 }

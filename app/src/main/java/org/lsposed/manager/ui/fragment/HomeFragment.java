@@ -23,6 +23,9 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.os.Build;
 import android.os.Bundle;
+import android.system.ErrnoException;
+import android.system.Os;
+import android.system.OsConstants;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -51,8 +54,12 @@ import org.lsposed.manager.util.Telemetry;
 import org.lsposed.manager.util.UpdateUtil;
 import org.lsposed.manager.util.chrome.LinkTransformationMethod;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import rikka.core.util.ClipboardUtils;
 import rikka.material.app.LocaleDelegate;
@@ -146,6 +153,7 @@ public class HomeFragment extends BaseFragment implements MenuProvider {
             }
             binding.statusSummary.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%d) - %s",
                     ConfigManager.getXposedVersionName(), ConfigManager.getXposedVersionCode(), ConfigManager.getApi()));
+            binding.developerWarningCard.setVisibility(isDeveloper() ? View.VISIBLE : View.GONE);
         } else {
             boolean isMagiskInstalled = ConfigManager.isMagiskInstalled();
             if (isMagiskInstalled) {
@@ -172,31 +180,27 @@ public class HomeFragment extends BaseFragment implements MenuProvider {
             binding.apiVersion.setText(String.valueOf(ConfigManager.getXposedApiVersion()));
             binding.api.setText(ConfigManager.isDexObfuscateEnabled() ? R.string.enabled : R.string.not_enabled);
             binding.frameworkVersion.setText(String.format(LocaleDelegate.getDefaultLocale(), "%1$s (%2$d)", ConfigManager.getXposedVersionName(), ConfigManager.getXposedVersionCode()));
+            binding.managerPackageName.setText(activity.getPackageName());
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.android_version_unsatisfied)));
             } else switch (ConfigManager.getDex2OatWrapperCompatibility()) {
-                case ILSPManagerService.DEX2OAT_OK:
-                    binding.dex2oatWrapper.setText(R.string.supported);
-                    break;
-                case ILSPManagerService.DEX2OAT_CRASHED:
-                    binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.crashed)));
-                    break;
-                case ILSPManagerService.DEX2OAT_MOUNT_FAILED:
-                    binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.mount_failed)));
-                    break;
-                case ILSPManagerService.DEX2OAT_SELINUX_PERMISSIVE:
-                    binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.selinux_permissive)));
-                    break;
-                case ILSPManagerService.DEX2OAT_SEPOLICY_INCORRECT:
-                    binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.sepolicy_incorrect)));
-                    break;
+                case ILSPManagerService.DEX2OAT_OK ->
+                        binding.dex2oatWrapper.setText(R.string.supported);
+                case ILSPManagerService.DEX2OAT_CRASHED ->
+                        binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.crashed)));
+                case ILSPManagerService.DEX2OAT_MOUNT_FAILED ->
+                        binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.mount_failed)));
+                case ILSPManagerService.DEX2OAT_SELINUX_PERMISSIVE ->
+                        binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.selinux_permissive)));
+                case ILSPManagerService.DEX2OAT_SEPOLICY_INCORRECT ->
+                        binding.dex2oatWrapper.setText(String.format(LocaleDelegate.getDefaultLocale(), "%s (%s)", getString(R.string.unsupported), getString(R.string.sepolicy_incorrect)));
             }
         } else {
             binding.apiVersion.setText(R.string.not_installed);
             binding.api.setText(R.string.not_installed);
             binding.frameworkVersion.setText(R.string.not_installed);
+            binding.managerPackageName.setText(activity.getPackageName());
         }
-        binding.managerVersion.setText(String.format(LocaleDelegate.getDefaultLocale(), "%1$s (%2$d)", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE));
 
         if (Build.VERSION.PREVIEW_SDK_INT != 0) {
             binding.systemVersion.setText(String.format(LocaleDelegate.getDefaultLocale(), "%1$s Preview (API %2$d)", Build.VERSION.CODENAME, Build.VERSION.SDK_INT));
@@ -222,9 +226,9 @@ public class HomeFragment extends BaseFragment implements MenuProvider {
                 "\n" +
                 binding.frameworkVersion.getText() +
                 "\n\n" +
-                activity.getString(R.string.info_manager_version) +
+                activity.getString(R.string.info_manager_package_name) +
                 "\n" +
-                binding.managerVersion.getText() +
+                binding.managerPackageName.getText() +
                 "\n\n" +
                 activity.getString(R.string.info_system_version) +
                 "\n" +
@@ -256,6 +260,32 @@ public class HomeFragment extends BaseFragment implements MenuProvider {
         }
         manufacturer += " " + Build.MODEL + " ";
         return manufacturer;
+    }
+
+    private boolean isDeveloper() {
+        var developer = new AtomicBoolean(false);
+        var pids = Paths.get("/data/local/tmp/.studio/ipids");
+        try (var dir = Files.list(pids)) {
+            dir.findFirst().ifPresent(name -> {
+                var pid = Integer.parseInt(name.getFileName().toString());
+                try {
+                    Os.kill(pid, 0);
+                    developer.set(true);
+                } catch (ErrnoException e) {
+                    if (e.errno == OsConstants.ESRCH) {
+                        try {
+                            Files.delete(name);
+                        } catch (IOException ignored) {
+                        }
+                    } else {
+                        developer.set(true);
+                    }
+                }
+            });
+        } catch (IOException e) {
+            return false;
+        }
+        return developer.get();
     }
 
     public static class AboutDialog extends DialogFragment {
